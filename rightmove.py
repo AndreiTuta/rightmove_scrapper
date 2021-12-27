@@ -1,9 +1,11 @@
 import os
+import requests
+import keyboard
 
 from bs4 import BeautifulSoup
+from datetime import datetime
 from dataclasses import dataclass
-
-import requests
+from apscheduler.schedulers.background import BackgroundScheduler
 
 path = 'results'
 
@@ -13,6 +15,7 @@ RIGHT_MOVE_LOCATIONS = BASE + ">div.H2aPmrbOxrd-nTRANQzAY>div._1KCWj_-6e8-7_oJv_
 RIGHT_MOVE_ADDED = BASE + ">article._2fFy6nQs_hX4a6WEDR-B-6>div._5KANqpn5yboC4UXVUxwjZ>div._3Kl5bSUaVKx1bidl6IHGj7>div._1NmnYm1CWDZHxDfsCNf-WJ>div._1q3dx8PQU8WWiT7uw7J9Ck>div._2nk2x6QhNB1UrxdI5KpvaF"
 RIGHT_MOVE_STATIONS = BASE + ">div._3v_yn6n1hMx6FsmIoZieCM>div#Stations-panel._2CdMEPuAVXHxzb5evl1Rb8>ul._2f-e_tRT-PqO8w8MBRckcn>li"
 RIGHT_MOVE_FEATURES = BASE + ">article>div._4hBezflLdgDMdFtURKTWh>div._1u12RxIYGx3c84eaGxI6_b>div._3mqo4prndvEDFoh4cDJw_n>div._2Pr4092dZUG6t1_MyGPRoL>div._1fcftXUEbWfJOJzIUeIHKt"
+properties = {}
 
 class SearchScraper:
     def __init__(
@@ -118,9 +121,9 @@ class Rightmove:
                 p = Property(price, location, title, added, stations, prop_type, bedrooms, bathrooms)
                 with open(f'{path}/'+soup.title.text+".html", 'w') as f:
                     f.write(rental_property_html)
-                properties[p.title] = (p, '{path}/'+soup.title.text+".html")
+                properties[p.title] = p
             except IndexError as e:
-                print(f"Error {str(e)}")
+                print(f"Error: {str(e)}")
         # post processing
         return properties
 
@@ -135,23 +138,39 @@ class Property():
     bedrooms: str
     bathrooms: str
 
-
-
-if __name__ == "__main__":
-    rightmove = Rightmove(
-        user_agent="This is a web scraper"
-    )
-
-    print(f'* Removing files from {path} *')
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            os.remove(os.path.join(root, file))
-
-    print("Starting house search...")
-    properties = rightmove.search({"radius": "5.0",
+def query_houses():
+    new_properties = {}
+    print(f"Starting house search at {datetime.now()}...")
+    for key,property in rightmove.search({"radius": "1.0",
             'searchType': 'SALE',
             'locationIdentifier': 'REGION^1268',
             'minBedrooms': '3',
             'maxPrice': '200000'},
-            False)
-    print(properties)
+            False).items():
+            if key not in properties.keys():
+                print(f"Adding a new property {key} to property list")
+                new_properties[key] = property
+            else:
+                print(f"Not adding property to property list")
+    return new_properties
+
+def process_data():
+    new_props = query_houses()
+    properties.update(new_props)
+    print(new_props)
+
+scheduler = BackgroundScheduler(timezone="Europe/London")
+rightmove = Rightmove(
+    user_agent="This is a web scraper"
+)
+
+print(f'* Removing files from {path} *')
+for root, dirs, files in os.walk(path):
+    for file in files:
+        os.remove(os.path.join(root, file))
+process_data()
+scheduler.add_job(process_data, 'interval', minutes=int(1))
+
+scheduler.start()
+while True:
+    keyboard.wait('q')
