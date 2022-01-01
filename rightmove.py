@@ -7,6 +7,8 @@ from datetime import datetime
 from dataclasses import dataclass
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from jinja2 import Template
+
 path = 'results'
 
 BASE = "div#root>main>div._38rRoDgM898XoMhNRXSWGq>div.WJG_W7faYk84nW-6sCBVi>div._1kesCpEjLyhQyzhf_suDHz"
@@ -119,11 +121,13 @@ class Rightmove:
                     station_text = BeautifulSoup(station_text.text, "html.parser").text.split("Station")
                     stations.append(" ".join(station_text))
                 title = soup.title.text
-                p = Property(price, location, title, added, stations, prop_type, bedrooms, bathrooms)
+                # save the path 
+                filePath = f'{path}/{region}/'+soup.title.text+".html"
+                p = Property(price, location, title, added, stations, prop_type, bedrooms, bathrooms, filePath)
                 # create folder if it doesn't exist already
                 os.makedirs(f'{path}/{region}', 0o666, True)
                 # then save the html for attachement
-                with open(f'{path}/{region}/'+soup.title.text+".html", 'w') as f:
+                with open(filePath, 'w') as f:
                     f.write(rental_property_html)
                 properties[p.title] = p
             except IndexError as e:
@@ -141,11 +145,12 @@ class Property():
     prop_type: str
     bedrooms: str
     bathrooms: str
+    htmlFile: str
 
 def query_houses(region, region_code):
     new_properties = {}
     print(f"Starting house search in region {region} at {datetime.now()}...")
-    for key,property in rightmove.search(region, {"radius": "5.0",
+    for key,property in rightmove.search(region, {"radius": "0.5",
             'searchType': 'SALE',
             'locationIdentifier': "REGION^"+region_code,
             'minBedrooms': '3',
@@ -155,36 +160,38 @@ def query_houses(region, region_code):
                 print(f"Adding a new property {key} to property list")
                 new_properties[key] = property
             else:
-                print(f"Not adding property to property list")
+                print(f"Not adding property {key} to property list")
     return new_properties
 
-# def get_properties_html(properties):
-#     return """
-#     {}
-#     """
+def get_properties_html(properties):
+    with open('template.html.jinja2') as file_:
+        # fetch jinja template
+        template = Template(file_.read())
+    # render it
+    return template.render(properties=properties)
 
 def process_data():
-    regions = {"Macclesfield":'890', "Stockport":'1268', "Hazel Grove":'12188', "New Mills":'18107'}
+    regions = {"Macclesfield":'890', "Stockport":'1268'}
+    #, "Hazel Grove":'12188', "New Mills":'18107'}
     for region, region_code in regions.items():
         new_props = query_houses(region, region_code)
-        properties.update(new_props)
+        properties[region] = (new_props)
         print(new_props)
-    # properties_html = get_properties_html(properties)
-    # with open(f'{path}/{datetime.now()}.html', 'w') as f:
-    #     f.write(properties_html)
+    properties_html = get_properties_html(properties)
+    with open(f'{path}/{datetime.now()}.html', 'w') as f:
+        f.write(properties_html)
 
 scheduler = BackgroundScheduler(timezone="Europe/London")
-rightmove = Rightmove(
-    user_agent="This is a web scraper"
-)
+rightmove = Rightmove(user_agent="This is a web scraper")
 
 print(f'* Removing files from {path} *')
 for root, dirs, files in os.walk(path):
     for file in files:
         os.remove(os.path.join(root, file))
-process_data()
-scheduler.add_job(process_data, 'interval', minutes=int(1))
 
+process_data()
+# add the job and run the scheduler
+scheduler.add_job(process_data, 'interval', minutes=int(1))
 scheduler.start()
 while True:
     keyboard.wait('q')
