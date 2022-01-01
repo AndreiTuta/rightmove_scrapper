@@ -150,7 +150,7 @@ class Property():
 def query_houses(region, region_code):
     new_properties = {}
     print(f"Starting house search in region {region} at {datetime.now()}...")
-    for key,property in rightmove.search(region, {"radius": "1.0",
+    for key,property in rightmove.search(region, {"radius": "5.0",
             'searchType': 'SALE',
             'locationIdentifier': "REGION^"+region_code,
             'minBedrooms': '3',
@@ -171,13 +171,20 @@ def get_properties_html(properties):
     return template.render(properties=properties)
 
 def process_data():
-    regions = {"Macclesfield":'890', "Stockport":'1268', "Hazel Grove":'12188', "New Mills":'18107'}
+    regions = {"Macclesfield":'890',
+    "Stockport":'1268',
+    "Hazel Grove":'12188',
+    "New Mills":'18107',
+    "Poynton": "20226",
+    "Crewe": "380"}
+    print(f'Starting property processing  task at {datetime.now()}.')
     for region, region_code in regions.items():
         new_props = query_houses(region, region_code)
         properties[region] = (new_props)
         print(new_props)
     properties_html = get_properties_html(properties)
     s.send(properties_html)
+    print(f'Finished property processing  task at {datetime.now()}.')
 
 scheduler = BackgroundScheduler(timezone="Europe/London")
 rightmove = Rightmove(user_agent="This is a web scraper")
@@ -189,5 +196,9 @@ for root, dirs, files in os.walk(path):
 
 process_data()
 # add the job and run the scheduler
-scheduler.add_job(process_data, 'interval', minutes=int(os.environ['SENDIBLUE_TIME']))
+scheduler.add_job(process_data, 'interval', minutes=int(os.environ['SENDINBLUE_TIME']))
 scheduler.start()
+
+
+while True:
+    pass
