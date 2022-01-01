@@ -96,6 +96,8 @@ class Rightmove:
         merged_params = self.params.copy()
         merged_params.update(params)
         starting_endpoint = self.endpoint
+        # get the region code
+        region = (params["locationIdentifier"].split('^')[1])
         if rent:
             starting_endpoint = starting_endpoint + self.endpoint_rent_search
         else:
@@ -119,7 +121,10 @@ class Rightmove:
                     stations.append(" ".join(station_text))
                 title = soup.title.text
                 p = Property(price, location, title, added, stations, prop_type, bedrooms, bathrooms)
-                with open(f'{path}/'+soup.title.text+".html", 'w') as f:
+                # create folder if it doesn't exist already
+                os.makedirs(f'{path}/{region}', 0o666, True)
+                # then save the html for attachement
+                with open(f'{path}/{region}/'+soup.title.text+".html", 'w') as f:
                     f.write(rental_property_html)
                 properties[p.title] = p
             except IndexError as e:
@@ -138,12 +143,12 @@ class Property():
     bedrooms: str
     bathrooms: str
 
-def query_houses():
+def query_houses(region):
     new_properties = {}
-    print(f"Starting house search at {datetime.now()}...")
+    print(f"Starting house search in region {region} at {datetime.now()}...")
     for key,property in rightmove.search({"radius": "1.0",
             'searchType': 'SALE',
-            'locationIdentifier': 'REGION^1268',
+            'locationIdentifier': region,
             'minBedrooms': '3',
             'maxPrice': '200000'},
             False).items():
@@ -155,9 +160,11 @@ def query_houses():
     return new_properties
 
 def process_data():
-    new_props = query_houses()
-    properties.update(new_props)
-    print(new_props)
+    regions = ['REGION^94262', 'REGION^1268']
+    for region in regions:
+        new_props = query_houses(region)
+        properties.update(new_props)
+        print(new_props)
 
 scheduler = BackgroundScheduler(timezone="Europe/London")
 rightmove = Rightmove(
