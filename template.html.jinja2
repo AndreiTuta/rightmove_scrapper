@@ -99,6 +99,7 @@ body {
                 <th scope="col">Type</th>
                 <th scope="col">Bedroom</th>
                 <th scope="col">Bathrooms</th>
+                <th scope="col">Stations</th>
                 <th scope="col">Link</th>
             </thead>
             <tbody>
@@ -108,7 +109,13 @@ body {
                 <td>{{property.prop_type}}</td>
                 <td>{{property.bedrooms}}</td>
                 <td>{{property.bathrooms}}</td>
-                <td>{{property.htmlFile}}</td>
+                <td><ul>
+                {% for station in property.stations %}
+                    <li>{{station}}</li>
+                {% endfor %}
+                </ul>
+                </td>
+                <td><a href="{{property.url}}"> Link </a></td>
             </tbody>
         </table>
     {% endfor %}

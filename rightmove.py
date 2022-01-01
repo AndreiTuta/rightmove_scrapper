@@ -45,7 +45,7 @@ class SearchScraper:
                 print("Finished searching")
                 break
             for link in links:
-                yield self.get(link)
+                yield link, self.get(link)
             page = page + self.per_page
 
     def get(self, endpoint, page=0, params={}):
@@ -103,7 +103,7 @@ class Rightmove:
             starting_endpoint = starting_endpoint + self.endpoint_rent_search
         else:
             starting_endpoint = starting_endpoint + self.endpoint_sale_search
-        for rental_property_html in self.scraper.search(
+        for link, rental_property_html in self.scraper.search(
                 starting_endpoint,
                 merged_params,
                 True
@@ -121,14 +121,7 @@ class Rightmove:
                     station_text = BeautifulSoup(station_text.text, "html.parser").text.split("Station")
                     stations.append(" ".join(station_text))
                 title = soup.title.text
-                # save the path 
-                filePath = f'{path}/{region}/'+soup.title.text+".html"
-                p = Property(price, location, title, added, stations, prop_type, bedrooms, bathrooms, filePath)
-                # create folder if it doesn't exist already
-                os.makedirs(f'{path}/{region}', 0o666, True)
-                # then save the html for attachement
-                with open(filePath, 'w') as f:
-                    f.write(rental_property_html)
+                p = Property(price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//','/'))
                 properties[p.title] = p
             except IndexError as e:
                 print(f"Error: {str(e)}")
@@ -145,12 +138,12 @@ class Property():
     prop_type: str
     bedrooms: str
     bathrooms: str
-    htmlFile: str
+    url: str
 
 def query_houses(region, region_code):
     new_properties = {}
     print(f"Starting house search in region {region} at {datetime.now()}...")
-    for key,property in rightmove.search(region, {"radius": "0.5",
+    for key,property in rightmove.search(region, {"radius": "2.0",
             'searchType': 'SALE',
             'locationIdentifier': "REGION^"+region_code,
             'minBedrooms': '3',
@@ -171,8 +164,7 @@ def get_properties_html(properties):
     return template.render(properties=properties)
 
 def process_data():
-    regions = {"Macclesfield":'890', "Stockport":'1268'}
-    #, "Hazel Grove":'12188', "New Mills":'18107'}
+    regions = {"Macclesfield":'890', "Stockport":'1268', "Hazel Grove":'12188', "New Mills":'18107'}
     for region, region_code in regions.items():
         new_props = query_houses(region, region_code)
         properties[region] = (new_props)
