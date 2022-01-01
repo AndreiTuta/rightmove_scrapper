@@ -128,7 +128,7 @@ class Rightmove:
                     station_text = BeautifulSoup(station_text.text, "html.parser").text.split("Station")
                     stations.append(" ".join(station_text))
                 title = soup.title.text
-                p = Property(price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//','/'))
+                p = Property(price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//properties','/properties'))
                 properties[p.title] = p
             except IndexError as e:
                 print(f"Error: {str(e)}")
