@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from jinja2 import Template
+from sendinblue import Sendinblue
 
 path = 'results'
 
@@ -17,7 +18,14 @@ RIGHT_MOVE_LOCATIONS = BASE + ">div.H2aPmrbOxrd-nTRANQzAY>div._1KCWj_-6e8-7_oJv_
 RIGHT_MOVE_ADDED = BASE + ">article._2fFy6nQs_hX4a6WEDR-B-6>div._5KANqpn5yboC4UXVUxwjZ>div._3Kl5bSUaVKx1bidl6IHGj7>div._1NmnYm1CWDZHxDfsCNf-WJ>div._1q3dx8PQU8WWiT7uw7J9Ck>div._2nk2x6QhNB1UrxdI5KpvaF"
 RIGHT_MOVE_STATIONS = BASE + ">div._3v_yn6n1hMx6FsmIoZieCM>div#Stations-panel._2CdMEPuAVXHxzb5evl1Rb8>ul._2f-e_tRT-PqO8w8MBRckcn>li"
 RIGHT_MOVE_FEATURES = BASE + ">article>div._4hBezflLdgDMdFtURKTWh>div._1u12RxIYGx3c84eaGxI6_b>div._3mqo4prndvEDFoh4cDJw_n>div._2Pr4092dZUG6t1_MyGPRoL>div._1fcftXUEbWfJOJzIUeIHKt"
+# properties dict
 properties = {}
+# sendinblue api
+s = Sendinblue(
+    os.environ['SENDINBLUE_KEY'],
+    os.environ['SENDINBLUE_FROM'],
+    os.environ['SENDINBLUE_TO']
+)
 
 class SearchScraper:
     def __init__(
@@ -143,7 +151,7 @@ class Property():
 def query_houses(region, region_code):
     new_properties = {}
     print(f"Starting house search in region {region} at {datetime.now()}...")
-    for key,property in rightmove.search(region, {"radius": "2.0",
+    for key,property in rightmove.search(region, {"radius": "1.0",
             'searchType': 'SALE',
             'locationIdentifier': "REGION^"+region_code,
             'minBedrooms': '3',
@@ -170,8 +178,7 @@ def process_data():
         properties[region] = (new_props)
         print(new_props)
     properties_html = get_properties_html(properties)
-    with open(f'{path}/{datetime.now()}.html', 'w') as f:
-        f.write(properties_html)
+    s.send(properties_html)
 
 scheduler = BackgroundScheduler(timezone="Europe/London")
 rightmove = Rightmove(user_agent="This is a web scraper")
@@ -183,7 +190,7 @@ for root, dirs, files in os.walk(path):
 
 process_data()
 # add the job and run the scheduler
-scheduler.add_job(process_data, 'interval', minutes=int(1))
+scheduler.add_job(process_data, 'interval', minutes=int(os.environ['SENDIBLUE_TIME']))
 scheduler.start()
 while True:
     keyboard.wait('q')
