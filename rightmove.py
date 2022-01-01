@@ -1,6 +1,5 @@
 import os
 import requests
-import keyboard
 
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -192,5 +191,3 @@ process_data()
 # add the job and run the scheduler
 scheduler.add_job(process_data, 'interval', minutes=int(os.environ['SENDIBLUE_TIME']))
 scheduler.start()
-while True:
-    keyboard.wait('q')
