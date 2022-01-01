@@ -91,13 +91,12 @@ class Rightmove:
             user_agent=user_agent
         )
 
-    def search(self, params={}, rent=False):
+    def search(self, region, params={}, rent=False):
         properties = {}
         merged_params = self.params.copy()
         merged_params.update(params)
         starting_endpoint = self.endpoint
         # get the region code
-        region = (params["locationIdentifier"].split('^')[1])
         if rent:
             starting_endpoint = starting_endpoint + self.endpoint_rent_search
         else:
@@ -143,12 +142,12 @@ class Property():
     bedrooms: str
     bathrooms: str
 
-def query_houses(region):
+def query_houses(region, region_code):
     new_properties = {}
     print(f"Starting house search in region {region} at {datetime.now()}...")
-    for key,property in rightmove.search({"radius": "1.0",
+    for key,property in rightmove.search(region, {"radius": "5.0",
             'searchType': 'SALE',
-            'locationIdentifier': region,
+            'locationIdentifier': "REGION^"+region_code,
             'minBedrooms': '3',
             'maxPrice': '200000'},
             False).items():
@@ -159,12 +158,20 @@ def query_houses(region):
                 print(f"Not adding property to property list")
     return new_properties
 
+# def get_properties_html(properties):
+#     return """
+#     {}
+#     """
+
 def process_data():
-    regions = ['REGION^94262', 'REGION^1268']
-    for region in regions:
-        new_props = query_houses(region)
+    regions = {"Macclesfield":'890', "Stockport":'1268', "Hazel Grove":'12188', "New Mills":'18107'}
+    for region, region_code in regions.items():
+        new_props = query_houses(region, region_code)
         properties.update(new_props)
         print(new_props)
+    # properties_html = get_properties_html(properties)
+    # with open(f'{path}/{datetime.now()}.html', 'w') as f:
+    #     f.write(properties_html)
 
 scheduler = BackgroundScheduler(timezone="Europe/London")
 rightmove = Rightmove(
