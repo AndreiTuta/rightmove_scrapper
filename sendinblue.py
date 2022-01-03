@@ -27,5 +27,5 @@ class Sendinblue():
         }
 
         response = requests.request("POST", self.url, headers=headers, data=payload)
-
+        print(f"Sendinblue response: {response.text}")
         return response.status_code == 201

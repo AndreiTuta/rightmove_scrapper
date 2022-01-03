@@ -199,10 +199,11 @@ def process_data():
         props.update(new_props)
         properties[region] = props
     properties_html = get_properties_html(properties)
-    s.send(properties_html)
+    success = s.send(properties_html)
     # with open('results/result.html', 'w') as f:
         # f.write(properties_html)
-    print(f'Finished property processing  task at {datetime.now()}.')
+    if success:
+        print(f'Finished property processing  task at {datetime.now()}.')
 
 scheduler = BackgroundScheduler(timezone="Europe/London")
 rightmove = Rightmove(user_agent="This is a web scraper")
