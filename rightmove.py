@@ -101,7 +101,7 @@ class Rightmove:
         )
 
     def search(self, region, params={}, rent=False):
-        properties = {}
+        query_properties = {}
         merged_params = self.params.copy()
         merged_params.update(params)
         starting_endpoint = self.endpoint
@@ -128,15 +128,17 @@ class Rightmove:
                     station_text = BeautifulSoup(station_text.text, "html.parser").text.split("Station")
                     stations.append(" ".join(station_text))
                 title = soup.title.text
-                p = Property(price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//properties','/properties'))
-                properties[p.title] = p
+                new = title not in properties[region].keys()
+                p = Property(new, price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//properties','/properties'))
+                query_properties[p.title] = p
             except IndexError as e:
                 print(f"Error: {str(e)}")
         # post processing
-        return properties
+        return query_properties
 
 @dataclass
 class Property():
+    new: bool
     price: str
     location: str
     title: str
@@ -156,11 +158,8 @@ def query_houses(region, region_code):
             'minBedrooms': '3',
             'maxPrice': '200000'},
             False).items():
-            if key not in properties.keys():
-                print(f"Adding a new property {key} to property list")
-                new_properties[key] = property
-            else:
-                print(f"Not adding property {key} to property list")
+            print(f"Adding a new property {key} to property list")
+            new_properties[key] = property
     return new_properties
 
 def get_properties_html(properties):
@@ -171,28 +170,35 @@ def get_properties_html(properties):
     return template.render(properties=properties)
 
 def process_data():
-    regions = {"Macclesfield":'890',
-    "Stockport":'1268',
+    regions = {
+    "Crewe": '380',
+    "Glossop": '555',
     "Hazel Grove":'12188',
+    "Hyde":'66185',
+    "Macclesfield":'890',
     "New Mills":'18107',
-    "Poynton": "20226",
-    "Crewe": "380"}
+    "Stockport":'1268',
+    "Poynton": '20226'
+    }
     print(f'Starting property processing  task at {datetime.now()}.')
     for region, region_code in regions.items():
+        try:
+            props = properties[region]
+        except KeyError:
+            print(f'Tried fetching properties list for {region}, but it was uninitiliased. Setting as empty.')
+            properties[region] = {}
+            props = {}
         new_props = query_houses(region, region_code)
-        properties[region] = (new_props)
-        print(new_props)
+        props.update(new_props)
+        properties[region] = props
     properties_html = get_properties_html(properties)
     s.send(properties_html)
+    # with open('results/result.html', 'w') as f:
+        # f.write(properties_html)
     print(f'Finished property processing  task at {datetime.now()}.')
 
 scheduler = BackgroundScheduler(timezone="Europe/London")
 rightmove = Rightmove(user_agent="This is a web scraper")
-
-print(f'* Removing files from {path} *')
-for root, dirs, files in os.walk(path):
-    for file in files:
-        os.remove(os.path.join(root, file))
 
 process_data()
 # add the job and run the scheduler
