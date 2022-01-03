@@ -25,6 +25,8 @@ class Sendinblue():
         'api-key': self.api,
         'Content-Type': 'application/json'
         }
+        print(f"Sendinblue request payload: {payload}")
+        print(f"Sendinblue request headers: {headers}")
 
         response = requests.request("POST", self.url, headers=headers, data=payload)
         print(f"Sendinblue response: {response.text}")

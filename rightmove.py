@@ -20,8 +20,8 @@ RIGHT_MOVE_FEATURES = BASE + ">article>div._4hBezflLdgDMdFtURKTWh>div._1u12RxIYG
 
 # process env variables
 sendinblue_key = os.environ['SENDINBLUE_KEY']
-sendinblue_receiver = os.environ['SENDINBLUE_TO'],
-sendinblue_sender = os.environ['SENDINBLUE_FROM'],
+sendinblue_receiver = os.environ['SENDINBLUE_TO']
+sendinblue_sender = os.environ['SENDINBLUE_FROM']
 timer = os.environ['SENDINBLUE_TIME']
 
 # properties dict
