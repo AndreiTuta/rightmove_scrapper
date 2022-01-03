@@ -17,13 +17,20 @@ RIGHT_MOVE_LOCATIONS = BASE + ">div.H2aPmrbOxrd-nTRANQzAY>div._1KCWj_-6e8-7_oJv_
 RIGHT_MOVE_ADDED = BASE + ">article._2fFy6nQs_hX4a6WEDR-B-6>div._5KANqpn5yboC4UXVUxwjZ>div._3Kl5bSUaVKx1bidl6IHGj7>div._1NmnYm1CWDZHxDfsCNf-WJ>div._1q3dx8PQU8WWiT7uw7J9Ck>div._2nk2x6QhNB1UrxdI5KpvaF"
 RIGHT_MOVE_STATIONS = BASE + ">div._3v_yn6n1hMx6FsmIoZieCM>div#Stations-panel._2CdMEPuAVXHxzb5evl1Rb8>ul._2f-e_tRT-PqO8w8MBRckcn>li"
 RIGHT_MOVE_FEATURES = BASE + ">article>div._4hBezflLdgDMdFtURKTWh>div._1u12RxIYGx3c84eaGxI6_b>div._3mqo4prndvEDFoh4cDJw_n>div._2Pr4092dZUG6t1_MyGPRoL>div._1fcftXUEbWfJOJzIUeIHKt"
+
+# process env variables
+sendinblue_key = os.environ['SENDINBLUE_KEY']
+sendinblue_receiver = os.environ['SENDINBLUE_TO'],
+sendinblue_sender = os.environ['SENDINBLUE_FROM'],
+timer = os.environ['SENDINBLUE_TIME']
+
 # properties dict
 properties = {}
 # sendinblue api
 s = Sendinblue(
-    os.environ['SENDINBLUE_KEY'],
-    os.environ['SENDINBLUE_FROM'],
-    os.environ['SENDINBLUE_TO']
+    sendinblue_key,
+    sendinblue_sender,
+    sendinblue_receiver
 )
 
 class SearchScraper:
@@ -202,7 +209,7 @@ rightmove = Rightmove(user_agent="This is a web scraper")
 
 process_data()
 # add the job and run the scheduler
-scheduler.add_job(process_data, 'interval', minutes=int(os.environ['SENDINBLUE_TIME']))
+scheduler.add_job(process_data, 'interval', minutes=int(timer))
 scheduler.start()
 
 
