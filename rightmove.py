@@ -159,7 +159,7 @@ class Property():
 def query_houses(region, region_code):
     new_properties = {}
     print(f"Starting house search in region {region} at {datetime.now()}...")
-    for key,property in rightmove.search(region, {"radius": "5.0",
+    for key,property in rightmove.search(region, {"radius": "1.0",
             'searchType': 'SALE',
             'locationIdentifier': "REGION^"+region_code,
             'minBedrooms': '3',
@@ -185,7 +185,8 @@ def process_data():
     "Macclesfield":'890',
     "New Mills":'18107',
     "Stockport":'1268',
-    "Poynton": '20226'
+    "Poynton": '20226',
+    "Wythenshaw": '27637'
     }
     print(f'Starting property processing  task at {datetime.now()}.')
     for region, region_code in regions.items():
