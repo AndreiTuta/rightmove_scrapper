@@ -92,6 +92,7 @@ body {
     {% set properties = property%}
     <table>
         <thead>
+            <th scope="col">New</th>
             <th scope="col">Price</th>
             <th scope="col">Location</th>
             <th scope="col">Added</th>
@@ -103,24 +104,20 @@ body {
         </thead>
         <tbody>
             {% for title, property in properties.items() %}
-                {% if property.new %}
-                <tr style="border:10px solid #ccab9c;">
-                {% else %}
-                <tr>
-                {% endif %}
-                    <td>{{property.price}}</td>
-                    <td>{{property.location}}</td>
-                    <td>{{property.added}}</td>
-                    <td>{{property.prop_type}}</td>
-                    <td>{{property.bedrooms}}</td>
-                    <td>{{property.bathrooms}}</td>
-                    <td><ul>
-                    {% for station in property.stations %}
-                        <li>{{station}}</li>
-                    {% endfor %}
-                    </ul>
-                    </td>
-                    <td><a href="{{property.url}}"> Link </a></td>
+                  <td>{{property.new}}</td>
+                  <td>{{property.price}}</td>
+                  <td>{{property.location}}</td>
+                  <td>{{property.added}}</td>
+                  <td>{{property.prop_type}}</td>
+                  <td>{{property.bedrooms}}</td>
+                  <td>{{property.bathrooms}}</td>
+                  <td><ul>
+                  {% for station in property.stations %}
+                      <li>{{station}}</li>
+                  {% endfor %}
+                  </ul>
+                  </td>
+                  <td><a href="{{property.url}}"> Link </a></td>
                 </tr>
             {% endfor %}
         </tbody>
