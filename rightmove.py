@@ -159,7 +159,7 @@ class Property():
 def query_houses(region, region_code):
     new_properties = {}
     print(f"Starting house search in region {region} at {datetime.now()}...")
-    for key,property in rightmove.search(region, {"radius": "1.0",
+    for key,property in rightmove.search(region, {"radius": "3.0",
             'searchType': 'SALE',
             'locationIdentifier': "REGION^"+region_code,
             'minBedrooms': '3',
