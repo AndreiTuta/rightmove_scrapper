@@ -1,6 +1,6 @@
 <style>
 table {
-  border: 1px solid #ccc;
+  border: 5px solid #ccc;
   border-collapse: collapse;
   margin: 0;
   padding: 0;
@@ -105,6 +105,7 @@ body {
           </thead>
           <tbody>
               {% for title, property in properties.items() %}
+                  <tr>
                     <td>{{property.new}}</td>
                     <td>{{property.price}}</td>
                     <td>{{property.location}}</td>
@@ -123,5 +124,7 @@ body {
               {% endfor %}
           </tbody>
       </table>
+    {% else %}
+      <h4> No properties for {{key}} </h4>
     {% endif %}
 {%endfor%}
