@@ -78,7 +78,7 @@ class RightMoveScrapper:
                 p = Property(new, price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//properties','/properties'))
                 query_properties[p.title] = p
             except IndexError as e:
-                logger.info(f"Error: Field missing for property. Ommiting")
+                logger.error(f"Error: Field missing for property. Ommiting")
         # post processing
         return query_properties
 

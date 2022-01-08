@@ -1,1 +1,1 @@
-worker: python rightmove.py
+worker: python main.py
