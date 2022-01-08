@@ -47,6 +47,7 @@ class SearchScraper:
         self.get_item_link_list_func = get_item_link_list_func
         self.user_agent = user_agent
         self.start_page = start_page
+        print(f"Creating new scrapper for {self.user_agent}")
 
     def search(self, starting_endpoint, params={}, v=False):
         page = int(self.start_page)
@@ -58,6 +59,7 @@ class SearchScraper:
             if not links:
                 print("Finished searching")
                 break
+            print(f"Found {len(links)} links")
             for link in links:
                 yield link, self.get(link)
             page = page + self.per_page
@@ -107,7 +109,7 @@ class Rightmove:
             user_agent=user_agent
         )
 
-    def search(self, region, params={}, rent=False):
+    def query_rightmove(self, region, params={}, rent=False):
         query_properties = {}
         merged_params = self.params.copy()
         merged_params.update(params)
@@ -139,7 +141,7 @@ class Rightmove:
                 p = Property(new, price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//properties','/properties'))
                 query_properties[p.title] = p
             except IndexError as e:
-                print(f"Error: {str(e)}")
+                print(f"Error: Field missing for property. Ommiting")
         # post processing
         return query_properties
 
@@ -156,17 +158,28 @@ class Property():
     bathrooms: str
     url: str
 
+def check_property_exists(key, property):
+    print(f'Checking if property {key} exists in other regions.')
+    for region, prop_dict in properties.items():
+        for prop_key in prop_dict.keys():
+            if(prop_key == key):
+                print(f"Prop {key} already exists in region {region}")
+                return None
+    print(f"Adding a new property {key} to property list")
+    return property
+
 def query_houses(region, region_code):
     new_properties = {}
     print(f"Starting house search in region {region} at {datetime.now()}...")
-    for key,property in rightmove.search(region, {"radius": "3.0",
+    for key,property in rightmove.query_rightmove(region, {"radius": "3.0",
             'searchType': 'SALE',
             'locationIdentifier': "REGION^"+region_code,
             'minBedrooms': '3',
             'maxPrice': '200000'},
             False).items():
-            print(f"Adding a new property {key} to property list")
-            new_properties[key] = property
+            property = check_property_exists(key, property)
+            if(property is not None):
+                new_properties[key] = property
     return new_properties
 
 def get_properties_html(properties):
