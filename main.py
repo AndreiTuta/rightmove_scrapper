@@ -18,7 +18,8 @@ timer = os.environ['SENDINBLUE_TIME']
 s = Sendinblue(
     sendinblue_key,
     sendinblue_sender,
-    sendinblue_receiver
+    sendinblue_receiver,
+    datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
 )
 
 
@@ -64,7 +65,7 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
         scrapper.properties[region] = props
     properties_html = scrapper.get_properties_html()
     success = False
-    success = s.send(properties_html, datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
+    success = s.send(properties_html)
     # with open('results/result.html', 'w') as f:
     #     f.write(properties_html)
     #     f.close()
