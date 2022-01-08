@@ -1,15 +1,9 @@
-import os
-import requests
-
 from bs4 import BeautifulSoup
 from datetime import datetime
 from dataclasses import dataclass
-from apscheduler.schedulers.background import BackgroundScheduler
-
 from jinja2 import Template
-from sendinblue import Sendinblue
 
-path = 'results'
+from scrapper import SearchScraper
 
 BASE = "div#root>main>div._38rRoDgM898XoMhNRXSWGq>div.WJG_W7faYk84nW-6sCBVi>div._1kesCpEjLyhQyzhf_suDHz"
 RIGHT_MOVE_PRICE = BASE + ">article._2fFy6nQs_hX4a6WEDR-B-6>div._5KANqpn5yboC4UXVUxwjZ>div._3Kl5bSUaVKx1bidl6IHGj7>div._1gfnqJ3Vtd1z40MlC0MzXu>span"
@@ -18,69 +12,7 @@ RIGHT_MOVE_ADDED = BASE + ">article._2fFy6nQs_hX4a6WEDR-B-6>div._5KANqpn5yboC4UX
 RIGHT_MOVE_STATIONS = BASE + ">div._3v_yn6n1hMx6FsmIoZieCM>div#Stations-panel._2CdMEPuAVXHxzb5evl1Rb8>ul._2f-e_tRT-PqO8w8MBRckcn>li"
 RIGHT_MOVE_FEATURES = BASE + ">article>div._4hBezflLdgDMdFtURKTWh>div._1u12RxIYGx3c84eaGxI6_b>div._3mqo4prndvEDFoh4cDJw_n>div._2Pr4092dZUG6t1_MyGPRoL>div._1fcftXUEbWfJOJzIUeIHKt"
 
-# process env variables
-sendinblue_key = os.environ['SENDINBLUE_KEY']
-sendinblue_receiver = os.environ['SENDINBLUE_TO']
-sendinblue_sender = os.environ['SENDINBLUE_FROM']
-timer = os.environ['SENDINBLUE_TIME']
-
-# properties dict
-properties = {}
-# sendinblue api
-s = Sendinblue(
-    sendinblue_key,
-    sendinblue_sender,
-    sendinblue_receiver
-)
-
-class SearchScraper:
-    def __init__(
-            self,
-            page_param,
-            per_page,
-            get_item_link_list_func,
-            user_agent,
-            start_page=0
-    ):
-        self.page_param = page_param
-        self.per_page = per_page
-        self.get_item_link_list_func = get_item_link_list_func
-        self.user_agent = user_agent
-        self.start_page = start_page
-        print(f"Creating new scrapper for {self.user_agent}")
-
-    def search(self, starting_endpoint, params={}, v=False):
-        page = int(self.start_page)
-        while True:
-            print("Processing page {}".format(page))
-            links = self.get_item_link_list_func(
-                self.get(starting_endpoint, page, params)
-            )
-            if not links:
-                print("Finished searching")
-                break
-            print(f"Found {len(links)} links")
-            for link in links:
-                yield link, self.get(link)
-            page = page + self.per_page
-
-    def get(self, endpoint, page=0, params={}):
-        headers = {
-            'User-Agent': self.user_agent
-        }
-        if page:
-            params[self.page_param] = page
-        while True:
-            try:
-                r = requests.get(endpoint, headers=headers, params=params)
-            except Exception as e:
-                print("Couldn't connect, retrying...")
-                continue
-            r.raise_for_status()
-            break
-        return r.text
-
-class Rightmove:
+class RightMoveScrapper:
     def __init__(self, user_agent):
         self.params = {
             'searchType': 'RENT',
@@ -92,6 +24,8 @@ class Rightmove:
             'maxDaysSinceAdded': '7',
             # '_includeSSTC': 'on'
         }
+        # properties dict
+        self.properties = {}
         self.endpoint = "http://www.rightmove.co.uk/"
         self.endpoint_rent_search = "property-for-rent/find.html"
         self.endpoint_sale_search = "property-for-sale/find.html"
@@ -137,13 +71,44 @@ class Rightmove:
                     station_text = BeautifulSoup(station_text.text, "html.parser").text.split("Station")
                     stations.append(" ".join(station_text))
                 title = soup.title.text
-                new = title not in properties[region].keys()
+                new = title not in self.properties[region].keys()
                 p = Property(new, price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//properties','/properties'))
                 query_properties[p.title] = p
             except IndexError as e:
                 print(f"Error: Field missing for property. Ommiting")
         # post processing
         return query_properties
+
+    def check_property_exists(self, key, property):
+        print(f'Checking if property {key} exists in other regions.')
+        for region, prop_dict in self.properties.items():
+            for prop_key in prop_dict.keys():
+                if(prop_key == key):
+                    print(f"Prop {key} already exists in region {region}")
+                    return None
+        print(f"Adding a new property {key} to property list")
+        return property
+
+    def query_houses(self, region, region_code):
+        new_properties = {}
+        print(f"Starting house search in region {region} at {datetime.now()}...")
+        for key,property in self.query_rightmove(region, {"radius": "3.0",
+                'searchType': 'SALE',
+                'locationIdentifier': "REGION^"+region_code,
+                'minBedrooms': '3',
+                'maxPrice': '200000'},
+                False).items():
+                property = self.check_property_exists(key, property)
+                if(property is not None):
+                    new_properties[key] = property
+        return new_properties
+
+    def get_properties_html(self):
+        with open('template.html.jinja2') as file_:
+            # fetch jinja template
+            template = Template(file_.read())
+        # render it
+        return template.render(properties=self.properties)
 
 @dataclass
 class Property():
@@ -157,76 +122,3 @@ class Property():
     bedrooms: str
     bathrooms: str
     url: str
-
-def check_property_exists(key, property):
-    print(f'Checking if property {key} exists in other regions.')
-    for region, prop_dict in properties.items():
-        for prop_key in prop_dict.keys():
-            if(prop_key == key):
-                print(f"Prop {key} already exists in region {region}")
-                return None
-    print(f"Adding a new property {key} to property list")
-    return property
-
-def query_houses(region, region_code):
-    new_properties = {}
-    print(f"Starting house search in region {region} at {datetime.now()}...")
-    for key,property in rightmove.query_rightmove(region, {"radius": "3.0",
-            'searchType': 'SALE',
-            'locationIdentifier': "REGION^"+region_code,
-            'minBedrooms': '3',
-            'maxPrice': '200000'},
-            False).items():
-            property = check_property_exists(key, property)
-            if(property is not None):
-                new_properties[key] = property
-    return new_properties
-
-def get_properties_html(properties):
-    with open('template.html.jinja2') as file_:
-        # fetch jinja template
-        template = Template(file_.read())
-    # render it
-    return template.render(properties=properties)
-
-def process_data():
-    regions = {
-    "Crewe": '380',
-    "Glossop": '555',
-    "Hazel Grove":'12188',
-    "Hyde":'66185',
-    "Macclesfield":'890',
-    "New Mills":'18107',
-    "Stockport":'1268',
-    "Poynton": '20226',
-    "Wythenshaw": '27637'
-    }
-    print(f'Starting property processing  task at {datetime.now()}.')
-    for region, region_code in regions.items():
-        try:
-            props = properties[region]
-        except KeyError:
-            print(f'Tried fetching properties list for {region}, but it was uninitiliased. Setting as empty.')
-            properties[region] = {}
-            props = {}
-        new_props = query_houses(region, region_code)
-        props.update(new_props)
-        properties[region] = props
-    properties_html = get_properties_html(properties)
-    success = s.send(properties_html)
-    # with open('results/result.html', 'w') as f:
-        # f.write(properties_html)
-    if success:
-        print(f'Finished property processing  task at {datetime.now()}.')
-
-scheduler = BackgroundScheduler(timezone="Europe/London")
-rightmove = Rightmove(user_agent="This is a web scraper")
-
-process_data()
-# add the job and run the scheduler
-scheduler.add_job(process_data, 'interval', minutes=int(timer))
-scheduler.start()
-
-
-while True:
-    pass
