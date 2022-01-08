@@ -1,12 +1,16 @@
 import requests
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Sendinblue():
-    def __init__(self, api, from_address, to_address):
+    def __init__(self, api, from_address, to_address, date):
         self.url = "https://api.sendinblue.com/v3/smtp/email"
         self.api = api
         self.from_address = from_address
         self.to_address = to_address
+        self.date = date
 
     def send(self, html):
         payload = json.dumps({
@@ -19,15 +23,15 @@ class Sendinblue():
             }
         ],
         "htmlContent": html,
-        "subject": "Rightmove houses"
+        "subject": f"Rightmove houses {self.date}"
         })
         headers = {
         'api-key': self.api,
         'Content-Type': 'application/json'
         }
-        print(f"Sendinblue request payload: {payload}")
-        print(f"Sendinblue request headers: {headers}")
+        logger.debug(f"Sendinblue request payload: {payload}")
+        logger.debug(f"Sendinblue request headers: {headers}")
 
         response = requests.request("POST", self.url, headers=headers, data=payload)
-        print(f"Sendinblue response: {response.text}")
+        logger.debug(f"Sendinblue response: {response.text}")
         return response.status_code == 201

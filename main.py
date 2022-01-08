@@ -1,5 +1,6 @@
 import os
 import logging
+import sys
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
@@ -13,7 +14,6 @@ sendinblue_key = os.environ['SENDINBLUE_KEY']
 sendinblue_receiver = os.environ['SENDINBLUE_TO']
 sendinblue_sender = os.environ['SENDINBLUE_FROM']
 timer = os.environ['SENDINBLUE_TIME']
-timer = 5
 # sendinblue api
 s = Sendinblue(
     sendinblue_key,
@@ -26,14 +26,17 @@ global logger
 logger=logging.getLogger()
 
 def set_logger():
-    print(f"Initialising logger {datetime.now()}")
-    file_handler = logging.FileHandler(os.path.join('logs','logfile.log'), mode="w")
+    print(f"Initialising logger {datetime.now().strftime('%d/%m/%Y, %H:%M:%S')}")
     formatter    = logging.Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(sys.stdout)  
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
+    logger.addHandler(handler)
 
 regions = {
+"Buxton": '261',
+"Chapel-en-le-Frith": '6005',
 "Crewe": '380',
 "Glossop": '555',
 "Hazel Grove":'12188',
@@ -42,10 +45,12 @@ regions = {
 "New Mills":'18107',
 "Stockport":'1268',
 "Poynton": '20226',
-"Wythenshaw": '27637'
+"Wimslow": '1456',
+"Wythenshaw": '27637',
 }
 
 def process_data(scrapper: RightMoveScrapper, regions: dict):
+    set_logger()
     logger.info(f'Starting property processing  task at {datetime.now()}.')
     for region, region_code in regions.items():
         try:
@@ -59,7 +64,7 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
         scrapper.properties[region] = props
     properties_html = scrapper.get_properties_html()
     success = False
-    success = s.send(properties_html)
+    success = s.send(properties_html, datetime.now().strftime("%d/%m/%Y, %H:%M:%S"))
     # with open('results/result.html', 'w') as f:
     #     f.write(properties_html)
     #     f.close()
@@ -67,7 +72,6 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
     if success:
         logger.info(f'Finished property processing  task at {datetime.now()}.')
 
-set_logger()
 scheduler = BackgroundScheduler(timezone="Europe/London")
 rightmove = RightMoveScrapper(user_agent="This is a web scraper")
 
