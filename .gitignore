@@ -1,1 +1,2 @@
-results/*.html
+results/
+logs/logfile.log
