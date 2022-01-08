@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from jinja2 import Template
 
 from scrapper import SearchScraper
+import logging
+
+logger = logging.getLogger(__name__)
 
 BASE = "div#root>main>div._38rRoDgM898XoMhNRXSWGq>div.WJG_W7faYk84nW-6sCBVi>div._1kesCpEjLyhQyzhf_suDHz"
 RIGHT_MOVE_PRICE = BASE + ">article._2fFy6nQs_hX4a6WEDR-B-6>div._5KANqpn5yboC4UXVUxwjZ>div._3Kl5bSUaVKx1bidl6IHGj7>div._1gfnqJ3Vtd1z40MlC0MzXu>span"
@@ -75,23 +78,23 @@ class RightMoveScrapper:
                 p = Property(new, price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//properties','/properties'))
                 query_properties[p.title] = p
             except IndexError as e:
-                print(f"Error: Field missing for property. Ommiting")
+                logger.info(f"Error: Field missing for property. Ommiting")
         # post processing
         return query_properties
 
     def check_property_exists(self, key, property):
-        print(f'Checking if property {key} exists in other regions.')
+        logger.info(f'Checking if property {key} exists in other regions.')
         for region, prop_dict in self.properties.items():
             for prop_key in prop_dict.keys():
                 if(prop_key == key):
-                    print(f"Prop {key} already exists in region {region}")
+                    logger.info(f"Prop {key} already exists in region {region}")
                     return None
-        print(f"Adding a new property {key} to property list")
+        logger.info(f"Adding a new property {key} to property list")
         return property
 
     def query_houses(self, region, region_code):
         new_properties = {}
-        print(f"Starting house search in region {region} at {datetime.now()}...")
+        logger.info(f"Starting house search in region {region} at {datetime.now()}...")
         for key,property in self.query_rightmove(region, {"radius": "3.0",
                 'searchType': 'SALE',
                 'locationIdentifier': "REGION^"+region_code,

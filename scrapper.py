@@ -1,4 +1,7 @@
 import requests 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SearchScraper:
     def __init__(
@@ -14,19 +17,19 @@ class SearchScraper:
         self.get_item_link_list_func = get_item_link_list_func
         self.user_agent = user_agent
         self.start_page = start_page
-        print(f"Creating new scrapper for {self.user_agent}")
+        logger.info(f"Creating new scrapper for {self.user_agent}")
 
     def search(self, starting_endpoint, params={}, v=False):
         page = int(self.start_page)
         while True:
-            print("Processing page {}".format(page))
+            logger.info("Processing page {}".format(page))
             links = self.get_item_link_list_func(
                 self.get(starting_endpoint, page, params)
             )
             if not links:
-                print("Finished searching")
+                logger.info("Finished searching")
                 break
-            print(f"Found {len(links)} links")
+            logger.info(f"Found {len(links)} links")
             for link in links:
                 yield link, self.get(link)
             page = page + self.per_page
@@ -41,7 +44,7 @@ class SearchScraper:
             try:
                 r = requests.get(endpoint, headers=headers, params=params)
             except Exception as e:
-                print("Couldn't connect, retrying...")
+                logger.info("Couldn't connect, retrying...")
                 continue
             r.raise_for_status()
             break
