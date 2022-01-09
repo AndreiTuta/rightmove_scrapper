@@ -7,19 +7,16 @@ from datetime import datetime
 from sendinblue import Sendinblue
 from rightmove import RightMoveScrapper
 
-path = 'results'
-
 # process env variables
 sendinblue_key = os.environ['SENDINBLUE_KEY']
-sendinblue_receiver = os.environ['SENDINBLUE_TO']
+sendinblue_receivers = list(os.environ['SENDINBLUE_TO'])
 sendinblue_sender = os.environ['SENDINBLUE_FROM']
 timer = os.environ['SENDINBLUE_TIME']
 # sendinblue api
 s = Sendinblue(
     sendinblue_key,
     sendinblue_sender,
-    sendinblue_receiver,
-    datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
+    sendinblue_receivers
 )
 
 

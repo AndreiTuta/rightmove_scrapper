@@ -74,8 +74,7 @@ class RightMoveScrapper:
                     station_text = BeautifulSoup(station_text.text, "html.parser").text.split("Station")
                     stations.append(" ".join(station_text))
                 title = soup.title.text
-                new = title not in self.properties[region].keys()
-                p = Property(new, price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//properties','/properties'))
+                p = Property(False, price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//properties','/properties'))
                 query_properties[p.title] = p
             except IndexError as e:
                 logger.error(f"Error: Field missing for property. Ommiting")
@@ -90,6 +89,7 @@ class RightMoveScrapper:
                     logger.info(f"Prop {key} already exists in region {region}")
                     return None
         logger.info(f"Adding a new property {key} to property list")
+        property.new = True
         return property
 
     def query_houses(self, region, region_code):
