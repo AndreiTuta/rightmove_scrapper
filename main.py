@@ -28,8 +28,7 @@ def set_logger():
     formatter    = logging.Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
     handler = logging.StreamHandler(sys.stdout)  
     handler.setFormatter(formatter)
-    handler.setLevel(logging.DEBUG)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     logger.addHandler(handler)
 
 regions = {
