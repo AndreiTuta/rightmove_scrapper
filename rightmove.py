@@ -24,7 +24,7 @@ class RightMoveScrapper:
             'minPrice': '',
             'maxPrice': '100',
             'minBedrooms': '2',
-            'maxDaysSinceAdded': '7',
+            'maxDaysSinceAdded': '3',
             # '_includeSSTC': 'on'
         }
         # properties dict
