@@ -41,6 +41,8 @@ class Sendinblue():
             response = self.make_sendinblue_email_call(to_address, html)
             logger.debug(f"Sendinblue response: {response.text}")
             if (response.status_code == 201):
+                logging.info(f"Sent email to {to_address}")
+            else:
                 logging.error(f"Failed to send email to {to_address}")
                 success = False
         return success

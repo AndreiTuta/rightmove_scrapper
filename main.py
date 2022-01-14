@@ -9,9 +9,11 @@ from rightmove import RightMoveScrapper
 
 # process env variables
 sendinblue_key = os.environ['SENDINBLUE_KEY']
-sendinblue_receivers = list(os.environ['SENDINBLUE_TO'])
+sendinblue_receivers = (os.environ['SENDINBLUE_TO']).split(",")
 sendinblue_sender = os.environ['SENDINBLUE_FROM']
 timer = os.environ['SENDINBLUE_TIME']
+radius = os.environ['RIGHTMOVE_RADIUS']
+
 # sendinblue api
 s = Sendinblue(
     sendinblue_key,
@@ -32,18 +34,21 @@ def set_logger():
     logger.addHandler(handler)
 
 regions = {
-"Buxton": '261',
-"Chapel-en-le-Frith": '6005',
-"Crewe": '380',
-"Glossop": '555',
-"Hazel Grove":'12188',
-"Hyde":'66185',
-"Macclesfield":'890',
-"New Mills":'18107',
-"Stockport":'1268',
-"Poynton": '20226',
-"Wimslow": '1456',
-"Wythenshaw": '27637',
+    "Adlington": '1689',
+    "Astbury": '2392',
+    "Buxton": '261',
+    "Chapel-en-le-Frith": '6005',
+    "Crewe": '380',
+    "Glossop": '555',
+    "Hazel Grove":'12188',
+    "Holmes Chapel": '12937',
+    "Hyde":'66185',
+    "Macclesfield":'890',
+    "New Mills":'18107',
+    "Stockport":'1268',
+    "Poynton": '20226',
+    "Wimslow": '1456',
+    "Wythenshaw": '27637',
 }
 
 def process_data(scrapper: RightMoveScrapper, regions: dict):
@@ -56,7 +61,7 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
             logger.info(f'Tried fetching properties list for {region}, but it was uninitiliased. Setting as empty.')
             scrapper.properties[region] = {}
             props = {}
-        new_props = scrapper.query_houses(region, region_code)
+        new_props = scrapper.query_houses(region, region_code, radius)
         props.update(new_props)
         scrapper.properties[region] = props
     properties_html = scrapper.get_properties_html()

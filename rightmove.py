@@ -92,10 +92,10 @@ class RightMoveScrapper:
         property.new = True
         return property
 
-    def query_houses(self, region, region_code):
+    def query_houses(self, region, region_code, radius):
         new_properties = {}
         logger.info(f"Starting house search in region {region} at {datetime.now()}...")
-        for key,property in self.query_rightmove(region, {"radius": "3.0",
+        for key,property in self.query_rightmove(region, {"radius": radius,
                 'searchType': 'SALE',
                 'locationIdentifier': "REGION^"+region_code,
                 'minBedrooms': '3',
