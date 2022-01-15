@@ -67,7 +67,7 @@ class RightMoveScrapper:
                 price = (soup.select(RIGHT_MOVE_PRICE)[0]).text
                 location = (soup.select(RIGHT_MOVE_LOCATIONS)[0]).text
                 # update link by removing double backslash
-                link = link.replace("//","/")
+                link = link.replace("//properties","/properties")
                 # generate map link by appending query param
                 map_location = link.replace("?channel=RES_BUY", "map?channel=RES_BUY")
                 # extract the property id from the link
