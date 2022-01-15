@@ -21,7 +21,7 @@ table tr {
 
 table th,
 table td {
-  padding: .625em;
+  padding: 1em;
   text-align: center;
 }
 
@@ -34,10 +34,6 @@ table th {
 @media screen and (max-width: 600px) {
   table {
     border: 0;
-  }
-
-  table caption {
-    font-size: 1.3em;
   }
   
   table thead {
@@ -101,14 +97,14 @@ body {
               <th scope="col">Bedroom</th>
               <th scope="col">Bathrooms</th>
               <th scope="col">Stations</th>
-              <th scope="col">Link</th>
+              <th scope="col">More</th>
           </thead>
           <tbody>
               {% for title, property in properties.items() %}
                   <tr>
                     <td>{{property.new}}</td>
                     <td>{{property.price}}</td>
-                    <td>{{property.location}}</td>
+                    <td><a href="{{property.map_location}}">{{property.location}}</a></td>
                     <td>{{property.added}}</td>
                     <td>{{property.prop_type}}</td>
                     <td>{{property.bedrooms}}</td>

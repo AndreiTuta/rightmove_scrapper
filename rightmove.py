@@ -65,6 +65,10 @@ class RightMoveScrapper:
             try:
                 price = (soup.select(RIGHT_MOVE_PRICE)[0]).text
                 location = (soup.select(RIGHT_MOVE_LOCATIONS)[0]).text
+                # update link by removing double backslash
+                link = link.replace("//","/")
+                # generate map link by appending query param
+                map_location = link.replace("?channel=RES_BUY", "map?channel=RES_BUY")
                 added = (soup.select(RIGHT_MOVE_ADDED)[0]).text
                 prop_type = (soup.select(RIGHT_MOVE_FEATURES)[0]).text
                 bedrooms = (soup.select(RIGHT_MOVE_FEATURES)[1]).text
@@ -74,7 +78,7 @@ class RightMoveScrapper:
                     station_text = BeautifulSoup(station_text.text, "html.parser").text.split("Station")
                     stations.append(" ".join(station_text))
                 title = soup.title.text
-                p = Property(False, price, location, title, added, stations, prop_type, bedrooms, bathrooms, link.replace('//properties','/properties'))
+                p = Property(False, price, location,map_location, title, added, stations, prop_type, bedrooms, bathrooms, link)
                 query_properties[p.title] = p
             except IndexError as e:
                 logger.error(f"Error: Field missing for property. Ommiting")
@@ -118,6 +122,7 @@ class Property():
     new: bool
     price: str
     location: str
+    map_location: str
     title: str
     added: str
     stations: list
