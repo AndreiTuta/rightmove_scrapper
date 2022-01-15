@@ -97,6 +97,7 @@ body {
               <th scope="col">Bedroom</th>
               <th scope="col">Bathrooms</th>
               <th scope="col">Stations</th>
+              <th scope="col">Contact</th>
               <th scope="col">More</th>
           </thead>
           <tbody>
@@ -115,6 +116,7 @@ body {
                     {% endfor %}
                     </ul>
                     </td>
+                    <td><a href="{{property.contact_url}}"> Enquire </a></td>
                     <td><a href="{{property.url}}"> Link </a></td>
                   </tr>
               {% endfor %}

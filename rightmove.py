@@ -5,6 +5,7 @@ from jinja2 import Template
 
 from scrapper import SearchScraper
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,12 @@ class RightMoveScrapper:
                 link = link.replace("//","/")
                 # generate map link by appending query param
                 map_location = link.replace("?channel=RES_BUY", "map?channel=RES_BUY")
+                # extract the property id from the link
+                prop_ids = re.findall(r'\d+', link)
+                prop_id = prop_ids[0]
+                # use the id to get the contact form
+                contact_url = f"{self.endpoint}/property-for-sale/contactBranch.html?backToPropertyURL=%2Fproperties%2F{prop_id}&propertyId={prop_id}"
+                # property attributes
                 added = (soup.select(RIGHT_MOVE_ADDED)[0]).text
                 prop_type = (soup.select(RIGHT_MOVE_FEATURES)[0]).text
                 bedrooms = (soup.select(RIGHT_MOVE_FEATURES)[1]).text
@@ -78,10 +85,10 @@ class RightMoveScrapper:
                     station_text = BeautifulSoup(station_text.text, "html.parser").text.split("Station")
                     stations.append(" ".join(station_text))
                 title = soup.title.text
-                p = Property(False, price, location,map_location, title, added, stations, prop_type, bedrooms, bathrooms, link)
+                p = Property(False, price, location,map_location, title, added, stations, prop_type, bedrooms, bathrooms, link, contact_url)
                 query_properties[p.title] = p
             except IndexError as e:
-                logger.error(f"Error: Field missing for property. Ommiting")
+                logger.error(f"Error: Error processing property. Ommiting")
         # post processing
         return query_properties
 
@@ -130,3 +137,4 @@ class Property():
     bedrooms: str
     bathrooms: str
     url: str
+    contact_url: str
