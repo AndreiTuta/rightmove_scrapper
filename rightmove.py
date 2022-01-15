@@ -15,6 +15,7 @@ RIGHT_MOVE_LOCATIONS = BASE + ">div.H2aPmrbOxrd-nTRANQzAY>div._1KCWj_-6e8-7_oJv_
 RIGHT_MOVE_ADDED = BASE + ">article._2fFy6nQs_hX4a6WEDR-B-6>div._5KANqpn5yboC4UXVUxwjZ>div._3Kl5bSUaVKx1bidl6IHGj7>div._1NmnYm1CWDZHxDfsCNf-WJ>div._1q3dx8PQU8WWiT7uw7J9Ck>div._2nk2x6QhNB1UrxdI5KpvaF"
 RIGHT_MOVE_STATIONS = BASE + ">div._3v_yn6n1hMx6FsmIoZieCM>div#Stations-panel._2CdMEPuAVXHxzb5evl1Rb8>ul._2f-e_tRT-PqO8w8MBRckcn>li"
 RIGHT_MOVE_FEATURES = BASE + ">article>div._4hBezflLdgDMdFtURKTWh>div._1u12RxIYGx3c84eaGxI6_b>div._3mqo4prndvEDFoh4cDJw_n>div._2Pr4092dZUG6t1_MyGPRoL>div._1fcftXUEbWfJOJzIUeIHKt"
+RIGHT_MOVE_MONTHLY = "div#root>div._1tLR5kRoqLZPySCrk5HnOD>div._34vDaCz_NZuPJRjS5XJVXh>span.A8pd_b9E9GHaNUK-GSdwz"
 
 class RightMoveScrapper:
     def __init__(self, user_agent):
@@ -64,7 +65,6 @@ class RightMoveScrapper:
         ):
             soup = BeautifulSoup(rental_property_html, "html.parser")
             try:
-                price = (soup.select(RIGHT_MOVE_PRICE)[0]).text
                 location = (soup.select(RIGHT_MOVE_LOCATIONS)[0]).text
                 # update link by removing double backslash
                 link = link.replace("//properties","/properties")
@@ -80,12 +80,22 @@ class RightMoveScrapper:
                 prop_type = (soup.select(RIGHT_MOVE_FEATURES)[0]).text
                 bedrooms = (soup.select(RIGHT_MOVE_FEATURES)[1]).text
                 bathrooms = (soup.select(RIGHT_MOVE_FEATURES)[2]).text
+                # get price and value
+                price = (soup.select(RIGHT_MOVE_PRICE)[0]).text
+                # montly payment
+                # create url for mortgage scrapper and soup
+                safe_price = price.replace(',', '').replace('£', '')
+                mortgage_url = f"{self.endpoint}/mortgage-calculator?price={safe_price}&propertyType=houses&showStampDutyCalculator=true"
+                mortgage_soup = BeautifulSoup(self.scraper.get(mortgage_url), "html.parser")
+                # get price and strip everything but value
+                monthly_payment = (mortgage_soup.select(RIGHT_MOVE_MONTHLY)[0]).text
+                monthly_payment = (re.findall(r'\d+',monthly_payment))[0]
                 stations = []
                 for station_text in soup.select(RIGHT_MOVE_STATIONS):
                     station_text = BeautifulSoup(station_text.text, "html.parser").text.split("Station")
                     stations.append(" ".join(station_text))
                 title = soup.title.text
-                p = Property(False, price, location,map_location, title, added, stations, prop_type, bedrooms, bathrooms, link, contact_url)
+                p = Property(False, price,monthly_payment, location,map_location, title, added, stations, prop_type, bedrooms, bathrooms, link, contact_url)
                 query_properties[p.title] = p
             except IndexError as e:
                 logger.error(f"Error: Error processing property. Ommiting")
@@ -128,6 +138,7 @@ class RightMoveScrapper:
 class Property():
     new: bool
     price: str
+    monthly_payment: str
     location: str
     map_location: str
     title: str
