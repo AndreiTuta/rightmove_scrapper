@@ -19,12 +19,16 @@ REGIONS = {
     "MIDLANDS": {
     "Burton-On-Trent": '256',
     "Coventry": '94133',
+    "Chasetown": '6089',
     "Leicester": '789', 
     "Leamington Spa": '782',
     "Lichfield": '800',
     "Rugby": '1152',
     "Shirley": '22049',
     "Solihull": '1220',
+    "Sutton Coldfield": '1298',
+    "Tamworth": '1314',
+    "Walsall": '1392',
     "Warwick": '1404'
     }
 }

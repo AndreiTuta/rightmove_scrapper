@@ -14,6 +14,7 @@ sendinblue_receivers = (os.environ['SENDINBLUE_TO']).split(",")
 sendinblue_sender = os.environ['SENDINBLUE_FROM']
 timer = os.environ['SENDINBLUE_TIME']
 radius = os.environ['RIGHTMOVE_RADIUS']
+local = False
 
 # sendinblue api
 s = Sendinblue(
@@ -45,15 +46,17 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
             properties = {}
             properties.update(scrapper.query_houses(region, location, location_code, radius))
             scrapper_locations[location] = properties
-        print(f'Found {len(properties)} for {region}')
+            print(f'Found {len(properties)} for {location}')
         scrapper.regions[region] = scrapper_locations
     properties_html = scrapper.get_properties_html()
     success = False
-    # success = s.send(properties_html)
-    with open('results/result.html', 'w') as f:
-        f.write(properties_html)
-        f.close()
-        success = True
+    if local:
+        with open('results/result.html', 'w') as f:
+            f.write(properties_html)
+            f.close()
+            success = True
+    else:
+        success = s.send(properties_html)
     if success:
         logger.info(f'Finished property processing  task at {datetime.now()}.')
 

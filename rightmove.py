@@ -92,7 +92,11 @@ class RightMoveScrapper:
                 monthly_payment = (re.findall(r'\d+',monthly_payment))[0]
                 stations = []
                 for station_text in soup.select(RIGHT_MOVE_STATIONS):
-                    station_text = BeautifulSoup(station_text.text, "html.parser").text.split("Station")
+                    station_text = BeautifulSoup(station_text.text, "html.parser").text
+                    if 'Station' in station_text:
+                        station_text = station_text.split("Station")
+                    elif 'Stop' in station_text:
+                        station_text = station_text.split("Stop")
                     stations.append(" ".join(station_text))
                 title = soup.title.text
                 p = Property(False, price,monthly_payment, location,map_location, title, added, stations, prop_type, bedrooms, bathrooms, link, contact_url)
@@ -102,14 +106,15 @@ class RightMoveScrapper:
         # post processing
         return query_properties
 
-    def check_property_exists(self,region, key, property):
+    def check_property_exists(self, key, property):
         logger.info(f'Checking if property {key} exists in other regions.')
-        properties = self.regions[region]
-        for location, prop_dict in properties.items():
-            for prop_key in prop_dict.keys():
-                if(prop_key == key):
-                    logger.info(f"Prop {key} already exists in location {location}")
-                    return None
+        for region, properties in self.regions.items():
+            print(f'Checking for {region}...')
+            for location, prop_dict in properties.items():
+                for prop_key in prop_dict.keys():
+                    if(prop_key == key):
+                        logger.info(f"Prop {key} already exists in location {location}")
+                        return None
         logger.info(f"Adding a new property {key} to property list")
         return property
 
@@ -122,7 +127,7 @@ class RightMoveScrapper:
                 'minBedrooms': '3',
                 'maxPrice': '200000'},
                 False).items():
-                property = self.check_property_exists(region, key, property)
+                property = self.check_property_exists(key, property)
                 if(property is not None):
                     new_properties[key] = property
         return new_properties
