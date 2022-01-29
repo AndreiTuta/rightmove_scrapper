@@ -30,7 +30,7 @@ class RightMoveScrapper:
             # '_includeSSTC': 'on'
         }
         # properties dict
-        self.properties = {}
+        self.regions = {}
         self.endpoint = "http://www.rightmove.co.uk/"
         self.endpoint_rent_search = "property-for-rent/find.html"
         self.endpoint_sale_search = "property-for-sale/find.html"
@@ -102,27 +102,27 @@ class RightMoveScrapper:
         # post processing
         return query_properties
 
-    def check_property_exists(self, key, property):
+    def check_property_exists(self,region, key, property):
         logger.info(f'Checking if property {key} exists in other regions.')
-        for region, prop_dict in self.properties.items():
+        properties = self.regions[region]
+        for location, prop_dict in properties.items():
             for prop_key in prop_dict.keys():
                 if(prop_key == key):
-                    logger.info(f"Prop {key} already exists in region {region}")
+                    logger.info(f"Prop {key} already exists in location {location}")
                     return None
         logger.info(f"Adding a new property {key} to property list")
-        property.new = True
         return property
 
-    def query_houses(self, region, region_code, radius):
+    def query_houses(self, region, location, location_code, radius):
         new_properties = {}
-        logger.info(f"Starting house search in region {region} at {datetime.now()}...")
-        for key,property in self.query_rightmove(region, {"radius": radius,
+        logger.info(f"Starting house search in location {location} at {datetime.now()}...")
+        for key,property in self.query_rightmove(location, {"radius": radius,
                 'searchType': 'SALE',
-                'locationIdentifier': "REGION^"+region_code,
+                'locationIdentifier': "REGION^"+location_code,
                 'minBedrooms': '3',
                 'maxPrice': '200000'},
                 False).items():
-                property = self.check_property_exists(key, property)
+                property = self.check_property_exists(region, key, property)
                 if(property is not None):
                     new_properties[key] = property
         return new_properties
@@ -132,7 +132,7 @@ class RightMoveScrapper:
             # fetch jinja template
             template = Template(file_.read())
         # render it
-        return template.render(properties=self.properties)
+        return template.render(regions=self.regions)
 
 @dataclass
 class Property():

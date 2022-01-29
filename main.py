@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 from sendinblue import Sendinblue
 from rightmove import RightMoveScrapper
+from regions import REGIONS
 
 # process env variables
 sendinblue_key = os.environ['SENDINBLUE_KEY']
@@ -26,51 +27,33 @@ global logger
 logger=logging.getLogger()
 
 def set_logger():
-    print(f"Initialising logger {datetime.now().strftime('%d/%m/%Y, %H:%M:%S')}")
-    formatter    = logging.Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
-    handler = logging.StreamHandler(sys.stdout)  
-    handler.setFormatter(formatter)
-    logging.basicConfig(level=logging.DEBUG)
-    logger.addHandler(handler)
-
-regions = {
-    "Adlington": '1689',
-    "Astbury": '2392',
-    "Buxton": '261',
-    "Chapel-en-le-Frith": '6005',
-    "Crewe": '380',
-    "Glossop": '555',
-    "Hazel Grove":'12188',
-    "Holmes Chapel": '12937',
-    "Hyde":'66185',
-    "Macclesfield":'890',
-    "New Mills":'18107',
-    "Stockport":'1268',
-    "Poynton": '20226',
-    "Wimslow": '1456',
-    "Wythenshaw": '27637',
-}
+    print(f"Initialising logger {datetime.now().strftime('%d/%m/%Y, %H:%M:%S')}") 
+    logging.basicConfig(level=logging.INFO)
 
 def process_data(scrapper: RightMoveScrapper, regions: dict):
-    set_logger()
     logger.info(f'Starting property processing  task at {datetime.now()}.')
-    for region, region_code in regions.items():
+    for region in regions.keys():
+        locations = regions[region]
         try:
-            props = scrapper.properties[region]
+            scrapper_locations = scrapper.regions[region]
         except KeyError:
             logger.info(f'Tried fetching properties list for {region}, but it was uninitiliased. Setting as empty.')
-            scrapper.properties[region] = {}
-            props = {}
-        new_props = scrapper.query_houses(region, region_code, radius)
-        props.update(new_props)
-        scrapper.properties[region] = props
+            scrapper_locations = {}
+            scrapper.regions[region] = scrapper_locations
+        for location, location_code in locations.items():
+            print(f'Processing {location}: {location_code}')
+            properties = {}
+            properties.update(scrapper.query_houses(region, location, location_code, radius))
+            scrapper_locations[location] = properties
+        print(f'Found {len(properties)} for {region}')
+        scrapper.regions[region] = scrapper_locations
     properties_html = scrapper.get_properties_html()
     success = False
-    success = s.send(properties_html)
-    # with open('results/result.html', 'w') as f:
-    #     f.write(properties_html)
-    #     f.close()
-    #     success = True
+    # success = s.send(properties_html)
+    with open('results/result.html', 'w') as f:
+        f.write(properties_html)
+        f.close()
+        success = True
     if success:
         logger.info(f'Finished property processing  task at {datetime.now()}.')
 
@@ -78,9 +61,10 @@ scheduler = BackgroundScheduler(timezone="Europe/London")
 rightmove = RightMoveScrapper(user_agent="This is a web scraper")
 
 # add the job and run the scheduler
-scheduler.add_job(process_data, 'interval', minutes=int(timer), args=[rightmove, regions])
+# scheduler.add_job(process_data, 'interval', minutes=int(timer), args=[rightmove, REGIONS])
 
-process_data(rightmove, regions)
+set_logger()
+process_data(rightmove, REGIONS)
 scheduler.start()
 
 while True:
