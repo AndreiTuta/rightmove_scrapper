@@ -9,12 +9,12 @@ from rightmove import RightMoveScrapper
 from regions import REGIONS
 
 # process env variables
-sendinblue_key = os.environ['SENDINBLUE_KEY']
-sendinblue_receivers = (os.environ['SENDINBLUE_TO']).split(",")
-sendinblue_sender = os.environ['SENDINBLUE_FROM']
-timer = os.environ['SENDINBLUE_TIME']
-radius = os.environ['RIGHTMOVE_RADIUS']
-local = False
+sendinblue_key = os.getenv('SENDINBLUE_KEY', '')
+sendinblue_receivers = os.getenv('SENDINBLUE_TO', '').split(",")
+sendinblue_sender = os.getenv('SENDINBLUE_FROM', '')
+timer = os.getenv('SENDINBLUE_TIME', '')
+radius = os.getenv('RIGHTMOVE_RADIUS', '3')
+local =  os.getenv('LOCAL', True)
 
 # sendinblue api
 s = Sendinblue(
