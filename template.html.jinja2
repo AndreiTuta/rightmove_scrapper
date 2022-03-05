@@ -86,9 +86,9 @@ body {
 {% for region, properties in regions.items() %}
   <h1>{{region}}</h1>
     {%for key,property in properties.items() %}
+    {{key}}
       {% set properties = property%}
       {% if properties|length > 0 %}
-        <h4>{{key}}</h4>
         <table>
             <thead>
                 <th scope="col">Price</th>
@@ -103,10 +103,10 @@ body {
                 <th scope="col">More</th>
             </thead>
             <tbody>
-                {% for title, property in properties.items() %}
+                {% for price, property in properties.items() %}
                     <tr>
-                      <td>{{property.price}}</td>
-                      <td>£{{property.monthly_payment}}</td>
+                      <td><span>&#163;</span> {{price}}</td>
+                      <td><span>&#163;</span> {{property.monthly_payment}}</td>
                       <td><a href="{{property.map_location}}">{{property.location}}</a></td>
                       <td>{{property.added}}</td>
                       <td>{{property.prop_type}}</td>

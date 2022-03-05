@@ -1,7 +1,8 @@
-import requests 
+import requests
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 class SearchScraper:
     def __init__(
@@ -10,18 +11,20 @@ class SearchScraper:
             per_page,
             get_item_link_list_func,
             user_agent,
-            start_page=0
+            start_page=0,
+            max=10
     ):
         self.page_param = page_param
         self.per_page = per_page
         self.get_item_link_list_func = get_item_link_list_func
         self.user_agent = user_agent
         self.start_page = start_page
+        self.max = max
         logger.info(f"Creating new scrapper for {self.user_agent}")
 
     def search(self, starting_endpoint, params={}, v=False):
         page = int(self.start_page)
-        while True:
+        while True and page < self.max:
             logger.info("Processing page {}".format(page))
             links = self.get_item_link_list_func(
                 self.get(starting_endpoint, page, params)
