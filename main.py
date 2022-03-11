@@ -63,12 +63,5 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
 scheduler = BackgroundScheduler(timezone="Europe/London")
 rightmove = RightMoveScrapper(user_agent="This is a web scraper")
 
-# add the job and run the scheduler
-scheduler.add_job(process_data, 'interval', minutes=int(timer), args=[rightmove, REGIONS])
-
 set_logger()
 process_data(rightmove, REGIONS)
-scheduler.start()
-
-while True:
-    pass

@@ -141,7 +141,7 @@ class RightMoveScrapper:
                                                              'minBedrooms': '3',
                                                              'maxPrice': '200000'},
                                                   False).items():
-            property = self.check_property_exists(key, property)
+            # property = self.check_property_exists(key, property)
             if(property is not None):
                 new_properties[key] = property
         return new_properties

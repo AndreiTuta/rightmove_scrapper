@@ -86,7 +86,7 @@ body {
 {% for region, properties in regions.items() %}
   <h1>{{region}}</h1>
     {%for key,property in properties.items() %}
-    {{key}}
+    <h2>{{key}}</h2>
       {% set properties = property%}
       {% if properties|length > 0 %}
         <table>
