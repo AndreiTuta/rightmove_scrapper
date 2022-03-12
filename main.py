@@ -2,11 +2,11 @@ import os
 import logging
 import sys
 
-from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 from sendinblue import Sendinblue
 from rightmove import RightMoveScrapper
 from regions import REGIONS
+from spreadsheet import SpreadHandler
 
 # process env variables
 sendinblue_key = os.getenv('SENDINBLUE_KEY', '')
@@ -15,6 +15,8 @@ sendinblue_sender = os.getenv('SENDINBLUE_FROM', '')
 timer = os.getenv('SENDINBLUE_TIME', '')
 radius = os.getenv('RIGHTMOVE_RADIUS', '3')
 local =  os.getenv('LOCAL', True)
+sendinblue = os.getenv('SENDINBLUE', False)
+sheet_key = os.getenv('SHEET_KEY', "1Md11UVIOUdkSGiALuNRiTp1Ag_jddWYRrOQkS_35xz0")
 
 # sendinblue api
 s = Sendinblue(
@@ -50,17 +52,20 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
         scrapper.regions[region] = scrapper_locations
     properties_html = scrapper.get_properties_html()
     success = False
-    if local:
-        with open('results/result.html', 'w') as f:
-            f.write(properties_html)
-            f.close()
-            success = True
+    if sendinblue:
+        if local:
+            with open('results/result.html', 'w') as f:
+                f.write(properties_html)
+                f.close()
+                success = True
+        else:
+            success = s.send(properties_html)
+        if success:
+            logger.info(f'Finished property processing  task at {datetime.now()}.')
     else:
-        success = s.send(properties_html)
-    if success:
-        logger.info(f'Finished property processing  task at {datetime.now()}.')
+        s = SpreadHandler(sheet_key)
+        s.write(datetime.now().strftime("%m/%d/%Y"), scrapper.regions,  ['Price','Title','Monthly','Location','Added','Type','Bedroom','Bathrooms'])
 
-scheduler = BackgroundScheduler(timezone="Europe/London")
 rightmove = RightMoveScrapper(user_agent="This is a web scraper")
 
 set_logger()
