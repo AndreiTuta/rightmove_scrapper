@@ -1,8 +1,10 @@
-# auth.py
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import datetime
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SpreadHandler():
     
@@ -11,15 +13,20 @@ class SpreadHandler():
 
         self.gsheet = gc.open_by_key(spreadsheet_key)
         
+    def prep_sheet(self, title, headers, info):
+        logger.info(f'Preparing to create sheet {title}')
+        wsheet = self.gsheet.add_worksheet(title, 200, 32)
+        wsheet.insert_row(headers, 1)
+        wsheet.insert_rows(info, 2)
 
     def write(self, title, data, headers):
         for region, locations in data.items():
-            new_row_index = 1
-            wsheet = self.gsheet.add_worksheet(f'{title}- {region}', 200, 32)
-            wsheet.insert_row(headers, new_row_index)
-            for name, location in locations.items():
-                for price, prop in location.items():
-                    print(f'{price}: {prop}')
-                    new_row_index +=1
-                    info = [price, prop.title, prop.monthly_payment, prop.map_location, prop.added, prop.prop_type, prop.bedrooms, prop.bathrooms]
-                    wsheet.insert_row(info, new_row_index)
+            values = len(locations.keys())
+            if(values > 0):
+                logger.info(f'Attempting to write {values}')
+                info = []
+                for name, location in locations.items():
+                    for price, prop in location.items():
+                        logger.info(f'Writing {price}: {prop.title}')
+                        info.append(prop.to_csv())
+                self.prep_sheet(f'{title}- {region}', headers, info)

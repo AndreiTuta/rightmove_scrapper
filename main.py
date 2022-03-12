@@ -4,7 +4,7 @@ import sys
 
 from datetime import datetime
 from sendinblue import Sendinblue
-from rightmove import RightMoveScrapper
+from rightmove import RightMoveScrapper, Property
 from regions import REGIONS
 from spreadsheet import SpreadHandler
 
@@ -64,7 +64,7 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
             logger.info(f'Finished property processing  task at {datetime.now()}.')
     else:
         s = SpreadHandler(sheet_key)
-        s.write(datetime.now().strftime("%m/%d/%Y"), scrapper.regions,  ['Price','Title','Monthly','Location','Added','Type','Bedroom','Bathrooms'])
+        s.write(datetime.now().strftime("%m/%d/%Y"), scrapper.regions, Property.HEADERS)
 
 rightmove = RightMoveScrapper(user_agent="This is a web scraper")
 

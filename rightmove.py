@@ -121,7 +121,7 @@ class RightMoveScrapper:
     def check_property_exists(self, key, property):
         logger.info(f'Checking if property {key} exists in other regions.')
         for region, properties in self.regions.items():
-            print(f'Checking for {region}...')
+            logger.info(f'Checking for {region}...')
             for location, prop_dict in properties.items():
                 for prop_key in prop_dict.keys():
                     if(prop_key == key):
@@ -169,3 +169,10 @@ class Property():
     bathrooms: str
     url: str
     contact_url: str
+    
+    HEADERS = ['Price','Title','Monthly','Location','Added','Type','Bedroom','Bathrooms']
+    
+    def to_csv(self):
+        logger.info(f'Converting to csv: {self.title}')
+        return [self.price, self.title, self.monthly_payment, self.map_location, self.added, self.prop_type, self.bedrooms, self.bathrooms]
+    
