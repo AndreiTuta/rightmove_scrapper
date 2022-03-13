@@ -71,10 +71,10 @@ class RightMoveScrapper:
         self.regions[region] = scrapper_locations
 
     def process_soup(self, soup: BeautifulSoup, url_of_soup: str):
+        # sanitize link
+        link = url_of_soup.replace("//properties", "/properties")
         try:
             location = (soup.select(RIGHT_MOVE_LOCATIONS)[0]).text
-            # update link by removing double backslash
-            link = url_of_soup.replace("//properties", "/properties")
             # generate map link by appending query param
             map_location = link.replace(
                 "?channel=RES_BUY", "map?channel=RES_BUY")
@@ -120,6 +120,8 @@ class RightMoveScrapper:
         except IndexError as e:
             logger.error(
                 f"Error: Error processing property {link}. {e}. \n Ommiting.")
+            with open("failures.txt", "a") as myfile:
+                myfile.write(f'{link} \n')
             return None
 
     def query_rightmove(self, region, params={}, rent=False):
