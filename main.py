@@ -6,7 +6,6 @@ from datetime import datetime
 from sendinblue import Sendinblue
 from rightmove import RightMoveScrapper, Property
 from regions import REGIONS
-from spreadsheet import SpreadHandler
 
 # process env variables
 # Sendinblue config - used to send HTML table of results in emails
@@ -59,9 +58,7 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
             success = s.send(properties_html)
     else:
         logging.info(f"Preparing to write")
-        s = SpreadHandler(sheet_key)
-        date = RUNTIME[:10]
-        s.write(date, scrapper.regions, Property.HEADERS)
+        # covered in spreasheet branch
         success = True
     if success:
         logger.info(f'Finished property processing task on date {RUNTIME}.')
