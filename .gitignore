@@ -1,3 +1,6 @@
+# data
 results/
-logs/logfile.log
+# py
 __pycache__/
+# creds
+credentials.json

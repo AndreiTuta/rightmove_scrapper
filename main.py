@@ -3,18 +3,10 @@ import logging
 import sys
 
 from datetime import datetime
-from sendinblue import Sendinblue
 from rightmove import RightMoveScrapper, Property
 from regions import REGIONS
-from spreadsheet import SpreadHandler
 
 # process env variables
-# Sendinblue config - used to send HTML table of results in emails
-sendinblue_key = os.getenv('SENDINBLUE_KEY', '')
-sendinblue_receivers = os.getenv('SENDINBLUE_TO', '').split(",")
-sendinblue_sender = os.getenv('SENDINBLUE_FROM', '')
-# SPREADSHEETS
-sheet_key = os.getenv('SHEET_KEY', "1Md11UVIOUdkSGiALuNRiTp1Ag_jddWYRrOQkS_35xz0")
 # SEARCH constants
 RADIUS = os.getenv('RIGHTMOVE_RADIUS', '5')
 MAX_PRICE = os.getenv('RIGHTMOVE_MAX', '250000')
@@ -22,14 +14,7 @@ MAX_PRICE = os.getenv('RIGHTMOVE_MAX', '250000')
 # Save html as file or send via Sendinblue
 LOCAL =  os.getenv('LOCAL', True)
 # Use spreadsheets/html
-PROCESS_HTML = os.getenv('PROCESS_HTML', False)
-
-# sendinblue api
-s = Sendinblue(
-    sendinblue_key,
-    sendinblue_sender,
-    sendinblue_receivers
-)
+PROCESS_HTML = os.getenv('PROCESS_HTML', LOCAL)
 
 RUNTIME = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
 
@@ -56,12 +41,12 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
                 f.close()
                 success = True
         else:
-            success = s.send(properties_html)
+            # covered by sendinblue branch
+            success = True
+            pass
     else:
         logging.info(f"Preparing to write")
-        s = SpreadHandler(sheet_key)
-        date = RUNTIME[:10]
-        s.write(date, scrapper.regions, Property.HEADERS)
+        # covered by spreadsheet branch
         success = True
     if success:
         logger.info(f'Finished property processing task on date {RUNTIME}.')

@@ -119,7 +119,7 @@ class RightMoveScrapper:
                             added, stations, prop_type, bedrooms, bathrooms, link, contact_url)
         except IndexError as e:
             logger.error(
-                f"Error: Error processing property {url_of_soup}. {e}. \n Ommiting.")
+                f"Error: Error processing property {link}. {e}. \n Ommiting.")
             return None
 
     def query_rightmove(self, region, params={}, rent=False):
