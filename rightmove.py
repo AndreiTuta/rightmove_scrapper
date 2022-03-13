@@ -11,6 +11,9 @@ import collections
 
 logger = logging.getLogger(__name__)
 
+# 
+# CONSTANTS
+# 
 BASE = "div#root>main>div._38rRoDgM898XoMhNRXSWGq>div.WJG_W7faYk84nW-6sCBVi>div._1kesCpEjLyhQyzhf_suDHz"
 RIGHT_MOVE_PRICE = BASE + \
     ">article._2fFy6nQs_hX4a6WEDR-B-6>div._5KANqpn5yboC4UXVUxwjZ>div._3Kl5bSUaVKx1bidl6IHGj7>div._1gfnqJ3Vtd1z40MlC0MzXu>span"
@@ -21,7 +24,7 @@ RIGHT_MOVE_STATIONS = BASE + \
     ">div._3v_yn6n1hMx6FsmIoZieCM>div#Stations-panel._2CdMEPuAVXHxzb5evl1Rb8>ul._2f-e_tRT-PqO8w8MBRckcn>li"
 RIGHT_MOVE_FEATURES = BASE + ">article>div._4hBezflLdgDMdFtURKTWh>div._1u12RxIYGx3c84eaGxI6_b>div._3mqo4prndvEDFoh4cDJw_n>div._2Pr4092dZUG6t1_MyGPRoL>div._1fcftXUEbWfJOJzIUeIHKt"
 RIGHT_MOVE_MONTHLY = "div#root>div._1tLR5kRoqLZPySCrk5HnOD>div._34vDaCz_NZuPJRjS5XJVXh>span.A8pd_b9E9GHaNUK-GSdwz"
-
+DEF_RATE = 0
 
 class RightMoveScrapper:
     def __init__(self, user_agent):
@@ -64,7 +67,9 @@ class RightMoveScrapper:
         for location, location_code in locations.items():
             logger.info(f'Processing {location}: {location_code}')
             properties = {}
-            properties.update(self.query_houses(region, location, location_code, radius=radius, maxPrice = max_price))
+            # push new properties returned from query
+            prefs = {"region": region,"location":  location,"location_code":  location_code,"radius":  radius, "maxPrice": max_price}
+            properties.update(self.query_houses(prefs))
             scrapper_locations[location] = properties
             logger.info(f'Found {len(properties)} for {location}')
         logger.info(f'Updating {region}')
@@ -74,10 +79,14 @@ class RightMoveScrapper:
         # sanitize link
         link = url_of_soup.replace("//properties", "/properties")
         try:
-            location = (soup.select(RIGHT_MOVE_LOCATIONS)[0]).text
+            locations = (soup.select(RIGHT_MOVE_LOCATIONS)[0]).text.split(',')
+            street = locations[0]
+            location = locations[1]
             # generate map link by appending query param
             map_location = link.replace(
                 "?channel=RES_BUY", "map?channel=RES_BUY")
+            # floor plan link
+            floor_plan = link.replace("?channel=RES_BUY","floorplan?activePlan=1&channel=RES_BUY")
             # extract the property id from the link
             prop_ids = re.findall(r'\d+', link)
             prop_id = prop_ids[0]
@@ -115,7 +124,7 @@ class RightMoveScrapper:
                     station_text = station_text.split("Stop")
                 stations.append(" ".join(station_text))
             title = soup.title.text
-            return Property(False, price[1:], monthly_payment, location, map_location, title,
+            return Property(False, price[1:], monthly_payment, street, location, map_location, floor_plan, title,
                             added, stations, prop_type, bedrooms, bathrooms, link, contact_url)
         except IndexError as e:
             logger.error(
@@ -124,12 +133,11 @@ class RightMoveScrapper:
                 myfile.write(f'{link} \n')
             return None
 
-    def query_rightmove(self, region, params={}, rent=False):
+    def query_rightmove(self, params={}, rent=False):
         query_properties = {}
         merged_params = self.params.copy()
         merged_params.update(params)
         starting_endpoint = self.endpoint
-        # get the region code
         if rent:
             starting_endpoint = starting_endpoint + self.endpoint_rent_search
         else:
@@ -159,11 +167,16 @@ class RightMoveScrapper:
         logger.info(f"Adding a new property {key} to property list")
         return property
 
-    def query_houses(self, region, location, location_code, radius, maxPrice):
+    def query_houses(self, params: dict):
+        region = params['region']
+        location= params['location']
+        location_code= params['location_code']
+        radius= params['radius']
+        maxPrice= params['maxPrice']
         new_properties = {}
         logger.info(
             f"Starting house search in location {region} - {location} at {datetime.now()}...")
-        for key, property in self.query_rightmove(location, {"radius": radius,
+        for key, property in self.query_rightmove({"radius": radius,
                                                              'searchType': 'SALE',
                                                              'locationIdentifier': "REGION^"+location_code,
                                                              'minBedrooms': '3',
@@ -187,8 +200,10 @@ class Property():
     new: bool
     price: str
     monthly_payment: str
+    address: str
     location: str
     map_location: str
+    floor_plan: str
     title: str
     added: str
     stations: list
@@ -198,9 +213,9 @@ class Property():
     url: str
     contact_url: str
     
-    HEADERS = ['Price','Location','Monthly','Location','Added','Type','Bedroom','Bathrooms']
+    HEADERS = ['Price','Address', 'Location', 'Monthly','Location (MAP)', 'Floor plan','Added','Type','Bedroom','Bathrooms', 'Rating']
     
     def to_csv(self):
         logger.info(f'Converting to csv: {self.title}')
-        return [self.price, self.location, self.monthly_payment, self.map_location, self.added, self.prop_type, self.bedrooms, self.bathrooms]
+        return [self.price, self.address, self.location, self.monthly_payment, self.map_location, self.floor_plan, self.added, self.prop_type, self.bedrooms, self.bathrooms, DEF_RATE]
     

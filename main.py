@@ -1,20 +1,21 @@
 import os
 import logging
-import sys
 
 from datetime import datetime
 from rightmove import RightMoveScrapper, Property
 from regions import REGIONS
+from spreadsheet import SpreadHandler
 
 # process env variables
+sheet_key = os.getenv('SHEET_KEY', "1Md11UVIOUdkSGiALuNRiTp1Ag_jddWYRrOQkS_35xz0")
 # SEARCH constants
 RADIUS = os.getenv('RIGHTMOVE_RADIUS', '5')
 MAX_PRICE = os.getenv('RIGHTMOVE_MAX', '250000')
 # Runtime conf
-# Save html as file or send via Sendinblue
+# Save html as file/send via Sendinblue
 LOCAL =  os.getenv('LOCAL', True)
-# Use spreadsheets/html
-PROCESS_HTML = os.getenv('PROCESS_HTML', LOCAL)
+# Use html/spreadsheets
+PROCESS_HTML = os.getenv('PROCESS_HTML', False)
 
 RUNTIME = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
 
@@ -46,7 +47,9 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
             pass
     else:
         logging.info(f"Preparing to write")
-        # covered by spreadsheet branch
+        s = SpreadHandler(sheet_key)
+        date = RUNTIME[:10]
+        s.write(date, scrapper.regions, Property.HEADERS)
         success = True
     if success:
         logger.info(f'Finished property processing task on date {RUNTIME}.')
