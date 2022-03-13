@@ -53,6 +53,74 @@ class RightMoveScrapper:
             ]),
             user_agent=user_agent, start_page=0, max=1
         )
+        
+    def setup(self, region: str, locations: dict, radius: str, max_price: str):
+        try:
+            scrapper_locations = self.regions[region]
+        except KeyError:
+            logger.info(f'Tried fetching properties list for {region}, but it was uninitiliased. Setting as empty.')
+            scrapper_locations = {}
+            self.regions[region] = scrapper_locations
+        for location, location_code in locations.items():
+            logger.info(f'Processing {location}: {location_code}')
+            properties = {}
+            properties.update(self.query_houses(region, location, location_code, radius=radius, maxPrice = max_price))
+            scrapper_locations[location] = properties
+            logger.info(f'Found {len(properties)} for {location}')
+        logger.info(f'Updating {region}')
+        self.regions[region] = scrapper_locations
+
+    def process_soup(self, soup: BeautifulSoup, url_of_soup: str):
+        try:
+            location = (soup.select(RIGHT_MOVE_LOCATIONS)[0]).text
+            # update link by removing double backslash
+            link = url_of_soup.replace("//properties", "/properties")
+            # generate map link by appending query param
+            map_location = link.replace(
+                "?channel=RES_BUY", "map?channel=RES_BUY")
+            # extract the property id from the link
+            prop_ids = re.findall(r'\d+', link)
+            prop_id = prop_ids[0]
+            # use the id to get the contact form
+            contact_url = f"{self.endpoint}/property-for-sale/contactBranch.html?backToPropertyURL=%2Fproperties%2F{prop_id}&propertyId={prop_id}"
+            # property attributes
+            added = (soup.select(RIGHT_MOVE_ADDED)[0]).text
+            prop_type = (soup.select(RIGHT_MOVE_FEATURES)[0]).text
+            bedrooms = (soup.select(RIGHT_MOVE_FEATURES)[1]).text
+            bathrooms = (soup.select(RIGHT_MOVE_FEATURES)[2]).text
+            # get price and value
+            price = (soup.select(RIGHT_MOVE_PRICE)[0]).text
+            # 
+            # montly payment
+            # 
+            # create url for mortgage scrapper and soup
+            safe_price = price.replace(',', '').replace('£', '')
+            mortgage_url = f"{self.endpoint}/mortgage-calculator?price={safe_price}&propertyType=houses&showStampDutyCalculator=true"
+            mortgage_soup = BeautifulSoup(
+                self.scraper.get(mortgage_url), "html.parser")
+            # get price and strip everything but value
+            monthly_payment = (mortgage_soup.select(
+                RIGHT_MOVE_MONTHLY)[0]).text
+            monthly_payment = (re.findall(r'\d+', monthly_payment))[0]
+            # 
+            # transport
+            # 
+            stations = []
+            for station_text in soup.select(RIGHT_MOVE_STATIONS):
+                station_text = BeautifulSoup(
+                    station_text.text, "html.parser").text
+                if 'Station' in station_text:
+                    station_text = station_text.split("Station")
+                elif 'Stop' in station_text:
+                    station_text = station_text.split("Stop")
+                stations.append(" ".join(station_text))
+            title = soup.title.text
+            return Property(False, price[1:], monthly_payment, location, map_location, title,
+                            added, stations, prop_type, bedrooms, bathrooms, link, contact_url)
+        except IndexError as e:
+            logger.error(
+                f"Error: Error processing property {url_of_soup}. {e}. \n Ommiting.")
+            return None
 
     def query_rightmove(self, region, params={}, rent=False):
         query_properties = {}
@@ -70,51 +138,9 @@ class RightMoveScrapper:
                 True
         ):
             soup = BeautifulSoup(rental_property_html, "html.parser")
-            try:
-                location = (soup.select(RIGHT_MOVE_LOCATIONS)[0]).text
-                # update link by removing double backslash
-                link = link.replace("//properties", "/properties")
-                # generate map link by appending query param
-                map_location = link.replace(
-                    "?channel=RES_BUY", "map?channel=RES_BUY")
-                # extract the property id from the link
-                prop_ids = re.findall(r'\d+', link)
-                prop_id = prop_ids[0]
-                # use the id to get the contact form
-                contact_url = f"{self.endpoint}/property-for-sale/contactBranch.html?backToPropertyURL=%2Fproperties%2F{prop_id}&propertyId={prop_id}"
-                # property attributes
-                added = (soup.select(RIGHT_MOVE_ADDED)[0]).text
-                prop_type = (soup.select(RIGHT_MOVE_FEATURES)[0]).text
-                bedrooms = (soup.select(RIGHT_MOVE_FEATURES)[1]).text
-                bathrooms = (soup.select(RIGHT_MOVE_FEATURES)[2]).text
-                # get price and value
-                price = (soup.select(RIGHT_MOVE_PRICE)[0]).text
-                # montly payment
-                # create url for mortgage scrapper and soup
-                safe_price = price.replace(',', '').replace('£', '')
-                mortgage_url = f"{self.endpoint}/mortgage-calculator?price={safe_price}&propertyType=houses&showStampDutyCalculator=true"
-                mortgage_soup = BeautifulSoup(
-                    self.scraper.get(mortgage_url), "html.parser")
-                # get price and strip everything but value
-                monthly_payment = (mortgage_soup.select(
-                    RIGHT_MOVE_MONTHLY)[0]).text
-                monthly_payment = (re.findall(r'\d+', monthly_payment))[0]
-                stations = []
-                for station_text in soup.select(RIGHT_MOVE_STATIONS):
-                    station_text = BeautifulSoup(
-                        station_text.text, "html.parser").text
-                    if 'Station' in station_text:
-                        station_text = station_text.split("Station")
-                    elif 'Stop' in station_text:
-                        station_text = station_text.split("Stop")
-                    stations.append(" ".join(station_text))
-                title = soup.title.text
-                p = Property(False, price[1:], monthly_payment, location, map_location, title,
-                             added, stations, prop_type, bedrooms, bathrooms, link, contact_url)
+            p = self.process_soup(soup, link)
+            if p is not None:
                 query_properties[p.price] = p
-            except IndexError as e:
-                logger.error(
-                    f"Error: Error processing property {starting_endpoint + self.endpoint_rent_search}. Ommiting")
         # post processing
         return collections.OrderedDict(sorted(query_properties.items()))
 
@@ -131,15 +157,15 @@ class RightMoveScrapper:
         logger.info(f"Adding a new property {key} to property list")
         return property
 
-    def query_houses(self, region, location, location_code, radius):
+    def query_houses(self, region, location, location_code, radius, maxPrice):
         new_properties = {}
         logger.info(
-            f"Starting house search in location {location} at {datetime.now()}...")
+            f"Starting house search in location {region} - {location} at {datetime.now()}...")
         for key, property in self.query_rightmove(location, {"radius": radius,
                                                              'searchType': 'SALE',
                                                              'locationIdentifier': "REGION^"+location_code,
                                                              'minBedrooms': '3',
-                                                             'maxPrice': '200000'},
+                                                             'maxPrice': maxPrice},
                                                   False).items():
             # property = self.check_property_exists(key, property)
             if(property is not None):
@@ -170,9 +196,9 @@ class Property():
     url: str
     contact_url: str
     
-    HEADERS = ['Price','Title','Monthly','Location','Added','Type','Bedroom','Bathrooms']
+    HEADERS = ['Price','Location','Monthly','Location','Added','Type','Bedroom','Bathrooms']
     
     def to_csv(self):
         logger.info(f'Converting to csv: {self.title}')
-        return [self.price, self.title, self.monthly_payment, self.map_location, self.added, self.prop_type, self.bedrooms, self.bathrooms]
+        return [self.price, self.location, self.monthly_payment, self.map_location, self.added, self.prop_type, self.bedrooms, self.bathrooms]
     

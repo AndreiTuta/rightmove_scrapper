@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 class SpreadHandler():
     
     def __init__(self, spreadsheet_key: str):
+        # fetch credentials from google and store them locally for now
         gc = gspread.service_account(filename='credentials.json')
 
         self.gsheet = gc.open_by_key(spreadsheet_key)

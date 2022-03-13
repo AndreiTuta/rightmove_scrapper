@@ -5,6 +5,7 @@ REGIONS = {
         "Buxton": '261',
         "Chapel-en-le-Frith": '6005',
         "Crewe": '380',
+        "Disley": '8219',
         "Glossop": '555',
         "Hazel Grove": '12188',
         "Holmes Chapel": '12937',
@@ -16,20 +17,20 @@ REGIONS = {
         "Poynton": '20226',
         "Wimslow": '1456',
         "Wythenshaw": '27637'
+    },
+    "MIDLANDS": {
+        "Burton-On-Trent": '256',
+        "Coventry": '94133',
+        "Chasetown": '6089',
+        "Leicester": '789',
+        "Leamington Spa": '782',
+        "Lichfield": '800',
+        "Rugby": '1152',
+        "Shirley": '22049',
+        "Solihull": '1220',
+        "Sutton Coldfield": '1298',
+        "Tamworth": '1314',
+        "Walsall": '1392',
+        "Warwick": '1404'
     }
-    # "MIDLANDS": {
-    #     "Burton-On-Trent": '256',
-    #     "Coventry": '94133',
-    #     "Chasetown": '6089',
-    #     "Leicester": '789',
-    #     "Leamington Spa": '782',
-    #     "Lichfield": '800',
-    #     "Rugby": '1152',
-    #     "Shirley": '22049',
-    #     "Solihull": '1220',
-    #     "Sutton Coldfield": '1298',
-    #     "Tamworth": '1314',
-    #     "Walsall": '1392',
-    #     "Warwick": '1404'
-    # }
 }

@@ -9,14 +9,20 @@ from regions import REGIONS
 from spreadsheet import SpreadHandler
 
 # process env variables
+# Sendinblue config - used to send HTML table of results in emails
 sendinblue_key = os.getenv('SENDINBLUE_KEY', '')
 sendinblue_receivers = os.getenv('SENDINBLUE_TO', '').split(",")
 sendinblue_sender = os.getenv('SENDINBLUE_FROM', '')
-timer = os.getenv('SENDINBLUE_TIME', '')
-radius = os.getenv('RIGHTMOVE_RADIUS', '3')
-local =  os.getenv('LOCAL', True)
-sendinblue = os.getenv('SENDINBLUE', False)
+# SPREADSHEETS
 sheet_key = os.getenv('SHEET_KEY', "1Md11UVIOUdkSGiALuNRiTp1Ag_jddWYRrOQkS_35xz0")
+# SEARCH constants
+RADIUS = os.getenv('RIGHTMOVE_RADIUS', '5')
+MAX_PRICE = os.getenv('RIGHTMOVE_MAX', '250000')
+# Runtime conf
+# Save html as file or send via Sendinblue
+LOCAL =  os.getenv('LOCAL', True)
+# Use spreadsheets/html
+PROCESS_HTML = os.getenv('PROCESS_HTML', False)
 
 # sendinblue api
 s = Sendinblue(
@@ -25,48 +31,41 @@ s = Sendinblue(
     sendinblue_receivers
 )
 
+RUNTIME = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
+
+def set_logger():
+    print(f"Initialising logger {RUNTIME}") 
+    logging.basicConfig(level=logging.INFO)
 
 global logger
 logger=logging.getLogger()
 
-def set_logger():
-    print(f"Initialising logger {datetime.now().strftime('%d/%m/%Y, %H:%M:%S')}") 
-    logging.basicConfig(level=logging.INFO)
+set_logger()
 
 def process_data(scrapper: RightMoveScrapper, regions: dict):
-    logger.info(f'Starting property processing  task at {datetime.now()}.')
+    logger.info(f'Starting property processing  task at {RUNTIME}.')
     for region in regions.keys():
         locations = regions[region]
-        try:
-            scrapper_locations = scrapper.regions[region]
-        except KeyError:
-            logger.info(f'Tried fetching properties list for {region}, but it was uninitiliased. Setting as empty.')
-            scrapper_locations = {}
-            scrapper.regions[region] = scrapper_locations
-        for location, location_code in locations.items():
-            print(f'Processing {location}: {location_code}')
-            properties = {}
-            properties.update(scrapper.query_houses(region, location, location_code, radius))
-            scrapper_locations[location] = properties
-            print(f'Found {len(properties)} for {location}')
-        scrapper.regions[region] = scrapper_locations
-    properties_html = scrapper.get_properties_html()
+        scrapper.setup(region=region, locations=locations, radius=RADIUS, max_price=MAX_PRICE)
     success = False
-    if sendinblue:
-        if local:
+    if PROCESS_HTML:
+        properties_html = scrapper.get_properties_html()
+        if LOCAL:
             with open('results/result.html', 'w') as f:
                 f.write(properties_html)
                 f.close()
                 success = True
         else:
             success = s.send(properties_html)
-        if success:
-            logger.info(f'Finished property processing  task at {datetime.now()}.')
     else:
+        logging.info(f"Preparing to write")
         s = SpreadHandler(sheet_key)
-        s.write(datetime.now().strftime("%m/%d/%Y"), scrapper.regions, Property.HEADERS)
+        date = RUNTIME[:10]
+        s.write(date, scrapper.regions, Property.HEADERS)
+        success = True
+    if success:
+        logger.info(f'Finished property processing task on date {RUNTIME}.')
 
-rightmove = RightMoveScrapper(user_agent="This is a web scraper")
-
-set_logger()
-process_data(rightmove, REGIONS)
+if __name__ == "__main__":
+    rightmove = RightMoveScrapper(user_agent="This is a web scraper")
+    process_data(rightmove, REGIONS)
