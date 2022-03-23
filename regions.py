@@ -1,6 +1,7 @@
 REGIONS = {
-    "NORTH": {
+    "NORTH-WEST": {
         "Adlington": '1689',
+        "Aldery Edge": '21',
         "Astbury": '2392',
         "Buxton": '261',
         "Chapel-en-le-Frith": '6005',
@@ -10,6 +11,7 @@ REGIONS = {
         "Hazel Grove": '12188',
         "Holmes Chapel": '12937',
         "Hyde": '66185',
+        "Knutsford":'764',
         "Macclesfield": '890',
         "Marple": '16783',
         "New Mills": '18107',
@@ -17,6 +19,13 @@ REGIONS = {
         "Poynton": '20226',
         "Wimslow": '1456',
         "Wythenshaw": '27637'
+    },
+    "NORTH-EAST": {
+        "Bridlington":'213',
+        "Malton": '902',
+        "Scarborough": '1179',
+        "Pocklington": '19956',
+        "York": '1498'
     }
     # "MIDLANDS": {
     #     "Burton-On-Trent": '256',
