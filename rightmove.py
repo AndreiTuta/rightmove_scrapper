@@ -29,7 +29,6 @@ DEF_RATE = 0
 class RightMoveScrapper:
     def __init__(self, user_agent):
         self.params = {
-            'searchType': 'RENT',
             'insId': '1',
             'radius': '0.0',
             'minPrice': '',
@@ -57,7 +56,7 @@ class RightMoveScrapper:
             user_agent=user_agent, start_page=0, max=1
         )
         
-    def setup(self, region: str, locations: dict, radius: str, max_price: str):
+    def setup(self, region: str, locations: dict, radius: str, max_price: str, scrap_type:str = "SALE"):
         try:
             scrapper_locations = self.regions[region]
         except KeyError:
@@ -68,7 +67,7 @@ class RightMoveScrapper:
             logger.info(f'Processing {location}: {location_code}')
             properties = {}
             # push new properties returned from query
-            prefs = {"region": region,"location":  location,"location_code":  location_code,"radius":  radius, "maxPrice": max_price}
+            prefs = {"region": region,"location":  location,"location_code":  location_code,"radius":  radius, "maxPrice": max_price, "type": scrap_type}
             properties.update(self.query_houses(prefs))
             scrapper_locations[location] = properties
             logger.info(f'Found {len(properties)} for {location}')
@@ -172,16 +171,20 @@ class RightMoveScrapper:
         location= params['location']
         location_code= params['location_code']
         radius= params['radius']
+        scrap_type= params['type']
         maxPrice= params['maxPrice']
         new_properties = {}
         logger.info(
             f"Starting house search in location {region} - {location} at {datetime.now()}...")
-        for key, property in self.query_rightmove({"radius": radius,
-                                                             'searchType': 'SALE',
+        query_params={"radius": radius,
+                                                             'searchType': scrap_type,
                                                              'locationIdentifier': "REGION^"+location_code,
                                                              'minBedrooms': '3',
-                                                             'maxPrice': maxPrice},
-                                                  False).items():
+                                                             'maxPrice': maxPrice}
+        is_rent = scrap_type == "RENT"
+        if(is_rent):
+            query_params['dontShow']= "houseShare"
+        for key, property in self.query_rightmove(query_params,is_rent).items():
             # property = self.check_property_exists(key, property)
             if(property is not None):
                 new_properties[key] = property

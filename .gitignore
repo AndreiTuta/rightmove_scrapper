@@ -5,3 +5,4 @@ failures.txt
 __pycache__/
 # creds
 credentials.json
+failures.txt
