@@ -1,6 +1,4 @@
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import datetime
+import gspread as gspread
 
 import logging
 
@@ -14,11 +12,18 @@ class SpreadHandler():
 
         self.gsheet = gc.open_by_key(spreadsheet_key)
         
-    def prep_sheet(self, title, headers, info):
+    def prep_sheet(self, title, headers, info) -> bool:
         logger.info(f'Preparing to create sheet {title}')
-        wsheet = self.gsheet.add_worksheet(title, 200, 32)
+        try:
+            wsheet = self.gsheet.add_worksheet(title, 200, 32)
+        except gspread.exceptions.APIError:
+            logger.info(f'Not adding a new sheet, instead using {title}')
+            wsheet = self.gsheet.worksheet(title)
+            # def for a larger number
+            wsheet.batch_clear(['A1:K500'])
         wsheet.insert_row(headers, 1)
         wsheet.insert_rows(info, 2)
+        return True
 
     def write(self, title, data, headers):
         for region, locations in data.items():

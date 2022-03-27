@@ -26,6 +26,33 @@ RIGHT_MOVE_FEATURES = BASE + ">article>div._4hBezflLdgDMdFtURKTWh>div._1u12RxIYG
 RIGHT_MOVE_MONTHLY = "div#root>div._1tLR5kRoqLZPySCrk5HnOD>div._34vDaCz_NZuPJRjS5XJVXh>span.A8pd_b9E9GHaNUK-GSdwz"
 DEF_RATE = 0
 
+
+
+
+@dataclass
+class Property():
+    new: bool
+    price: str
+    monthly_payment: str
+    address: str
+    location: str
+    map_location: str
+    floor_plan: str
+    title: str
+    added: str
+    stations: list
+    prop_type: str
+    bedrooms: str
+    bathrooms: str
+    url: str
+    contact_url: str
+    
+    HEADERS = ['Price','Address', 'Location', 'Monthly','Location (MAP)', 'Floor plan','Added','Type','Bedroom','Bathrooms', 'Rating']
+    
+    def to_csv(self):
+        logger.info(f'Converting to csv: {self.title}')
+        return [self.price, self.address, self.location, self.monthly_payment, self.map_location, self.floor_plan, self.added, self.prop_type, self.bedrooms, self.bathrooms, DEF_RATE]
+    
 class RightMoveScrapper:
     def __init__(self, user_agent):
         self.params = {
@@ -74,7 +101,7 @@ class RightMoveScrapper:
         logger.info(f'Updating {region}')
         self.regions[region] = scrapper_locations
 
-    def process_soup(self, soup: BeautifulSoup, url_of_soup: str):
+    def process_soup(self, soup: BeautifulSoup, url_of_soup: str) -> Property:
         # sanitize link
         link = url_of_soup.replace("//properties", "/properties")
         try:
@@ -149,7 +176,7 @@ class RightMoveScrapper:
             soup = BeautifulSoup(rental_property_html, "html.parser")
             p = self.process_soup(soup, link)
             if p is not None:
-                query_properties[p.price] = p
+                query_properties[p.address] = p
         # post processing
         return collections.OrderedDict(sorted(query_properties.items()))
 
@@ -196,29 +223,3 @@ class RightMoveScrapper:
             template = Template(file_.read())
         # render it
         return template.render(regions=self.regions)
-
-
-@dataclass
-class Property():
-    new: bool
-    price: str
-    monthly_payment: str
-    address: str
-    location: str
-    map_location: str
-    floor_plan: str
-    title: str
-    added: str
-    stations: list
-    prop_type: str
-    bedrooms: str
-    bathrooms: str
-    url: str
-    contact_url: str
-    
-    HEADERS = ['Price','Address', 'Location', 'Monthly','Location (MAP)', 'Floor plan','Added','Type','Bedroom','Bathrooms', 'Rating']
-    
-    def to_csv(self):
-        logger.info(f'Converting to csv: {self.title}')
-        return [self.price, self.address, self.location, self.monthly_payment, self.map_location, self.floor_plan, self.added, self.prop_type, self.bedrooms, self.bathrooms, DEF_RATE]
-    
