@@ -9,9 +9,10 @@ from spreadsheet import SpreadHandler
 # process env variables
 sheet_key = os.getenv('SHEET_KEY', "1Md11UVIOUdkSGiALuNRiTp1Ag_jddWYRrOQkS_35xz0")
 # SEARCH constants
-RADIUS = os.getenv('RIGHTMOVE_RADIUS', '15.0')
-MAX_PRICE = os.getenv('RIGHTMOVE_MAX', '250000')
-SCRAP_TYPE =  os.getenv('STYPE', "RENT")
+RADIUS = os.getenv('RIGHTMOVE_RADIUS', '5.0')
+MAX_PRICE = os.getenv('RIGHTMOVE_MAX', '300000')
+SCRAP_TYPE =  os.getenv('STYPE', "SALE")
+MAX_PAGES =  os.getenv('MAX_PAGES', "1")
 # Runtime conf
 # Save html as file/send via Sendinblue
 LOCAL =  os.getenv('LOCAL', True)
@@ -50,11 +51,11 @@ def process_data(scrapper: RightMoveScrapper, regions: dict):
         logging.info(f"Preparing to write")
         s = SpreadHandler(sheet_key)
         date = RUNTIME[:10]
-        s.write(f"{SCRAP_TYPE} at{date}", scrapper.regions, Property.HEADERS)
+        s.write(f"{SCRAP_TYPE} at {date}", scrapper.regions, Property.HEADERS)
         success = True
     if success:
         logger.info(f'Finished property processing task on date {RUNTIME}.')
 
 if __name__ == "__main__":
-    rightmove = RightMoveScrapper(user_agent="This is a web scraper")
+    rightmove = RightMoveScrapper(user_agent=f"{SCRAP_TYPE} - [r:{RADIUS}][p:{MAX_PRICE}]", max_pages=MAX_PAGES)
     process_data(rightmove, REGIONS)
