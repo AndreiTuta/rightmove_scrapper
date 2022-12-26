@@ -1,6 +1,6 @@
 # data
 results/
-failures.txt
+*.out
 # py
 __pycache__/
 # creds
